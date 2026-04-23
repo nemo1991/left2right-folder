@@ -2,7 +2,7 @@
 
 一个基于 WPF 的桌面应用程序，用于智能对比和迁移两个大目录的文件。
 
-![软件截图](screenshot.png)
+![软件截图](./assets/images/ScreenShot-20260423.png)
 
 ## 功能特性
 
