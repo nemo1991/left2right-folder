@@ -22,7 +22,7 @@ public partial class MainViewModel : ObservableObject
     private CancellationTokenSource? _cts;
     private System.Collections.Generic.List<FileEntry> _sourceFiles = new();
     private System.Collections.Generic.List<FileEntry> _targetFiles = new();
-    private CompareResult? _compareResult;
+    private file_sync.Models.CompareResult? _compareResult;
     private string? _sessionId;
 
     [ObservableProperty] private string _sourceDirectory = "";

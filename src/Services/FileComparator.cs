@@ -13,7 +13,7 @@ namespace file_sync.Services;
 /// </summary>
 public interface IFileComparator
 {
-    Task<CompareResult> CompareAsync(
+    Task<file_sync.Models.CompareResult> CompareAsync(
         List<FileEntry> sourceFiles,
         List<FileEntry> targetFiles,
         IHashCalculator hashCalculator,
@@ -26,7 +26,7 @@ public interface IFileComparator
 /// </summary>
 public class FileComparator : IFileComparator
 {
-    public async Task<CompareResult> CompareAsync(
+    public async Task<file_sync.Models.CompareResult> CompareAsync(
         List<FileEntry> sourceFiles,
         List<FileEntry> targetFiles,
         IHashCalculator hashCalculator,
@@ -41,7 +41,7 @@ public class FileComparator : IFileComparator
         // Hash 缓存 - 避免重复计算同一文件的 Hash
         var hashCache = new ConcurrentDictionary<string, string>();
 
-        var toDelete = new List<FileEntry>();
+        var toDelete = new List<FileEntryToDelete>();
         var toMove = new List<FileEntry>();
 
         foreach (var sourceFile in sourceFiles)
@@ -61,6 +61,7 @@ public class FileComparator : IFileComparator
 
                     // 检查是否有相同 Hash 的文件
                     bool isDuplicate = false;
+                    FileEntry? matchingTarget = null;
                     foreach (var target in sameSizeTargets)
                     {
                         // 使用缓存避免重复计算
@@ -74,13 +75,17 @@ public class FileComparator : IFileComparator
                         if (sourceHash == targetHash)
                         {
                             isDuplicate = true;
+                            matchingTarget = target;
                             break;
                         }
                     }
 
-                    if (isDuplicate)
+                    if (isDuplicate && matchingTarget != null)
                     {
-                        toDelete.Add(sourceFile with { Status = FileStatus.ToDelete, Hash = sourceHash });
+                        toDelete.Add(new FileEntryToDelete(
+                            sourceFile with { Status = FileStatus.ToDelete, Hash = sourceHash },
+                            matchingTarget
+                        ));
                         progress?.Report($"待删除：{sourceFile.FileName} (目标目录已存在)");
                         continue;
                     }
@@ -98,6 +103,6 @@ public class FileComparator : IFileComparator
             }
         }
 
-        return new CompareResult(toDelete, toMove, sourceFiles.Count, targetFiles.Count);
+        return new file_sync.Models.CompareResult(toDelete, toMove, sourceFiles.Count, targetFiles.Count);
     }
 }

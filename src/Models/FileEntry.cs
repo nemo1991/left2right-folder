@@ -31,10 +31,18 @@ public enum FileStatus
 }
 
 /// <summary>
+/// 待删除文件（包含目标目录中对应的文件信息）
+/// </summary>
+public record FileEntryToDelete(
+    FileEntry SourceFile,
+    FileEntry TargetFile  // 目标目录中对应的文件
+);
+
+/// <summary>
 /// 对比结果
 /// </summary>
 public record CompareResult(
-    List<FileEntry> ToDelete,
+    List<FileEntryToDelete> ToDelete,
     List<FileEntry> ToMove,
     int TotalSource,
     int TotalTarget
@@ -69,5 +77,11 @@ public record MigrationDetail(
     System.DateTime LastModified,
     System.DateTime LastAccessed,
     string Status,        // Success / Failed / Skipped
-    string ErrorMessage
+    string ErrorMessage,
+    string TargetFilePath = "",      // 目标目录中对应文件的路径
+    long TargetFileSize = 0,         // 目标文件大小
+    string TargetHash = "",          // 目标文件 Hash
+    System.DateTime TargetCreatedTime = default,  // 目标文件创建时间
+    System.DateTime TargetLastModified = default, // 目标文件最后修改时间
+    System.DateTime TargetLastAccessed = default  // 目标文件最后访问时间
 );

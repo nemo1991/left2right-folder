@@ -13,7 +13,7 @@ namespace file_sync.Services;
 public interface IFileMigrator
 {
     Task<MigrationResult> MigrateAsync(
-        List<FileEntry> toDelete,
+        List<FileEntryToDelete> toDelete,
         List<FileEntry> toMove,
         string sourceDirectory,
         string targetDirectory,
@@ -42,7 +42,7 @@ public record MigrationProgress(
 public class FileMigrator : IFileMigrator
 {
     public async Task<MigrationResult> MigrateAsync(
-        List<FileEntry> toDelete,
+        List<FileEntryToDelete> toDelete,
         List<FileEntry> toMove,
         string sourceDirectory,
         string targetDirectory,
@@ -56,9 +56,12 @@ public class FileMigrator : IFileMigrator
         int errorCount = 0;
 
         // 先执行删除操作
-        foreach (var file in toDelete)
+        foreach (var fileEntry in toDelete)
         {
             ct.ThrowIfCancellationRequested();
+
+            var file = fileEntry.SourceFile;
+            var targetFile = fileEntry.TargetFile;
 
             try
             {
@@ -67,14 +70,22 @@ public class FileMigrator : IFileMigrator
                     File.Delete(file.FullPath);
                     deletedCount++;
                     details.Add(new MigrationDetail(
-                        "Delete", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Success", ""
+                        "Delete", file.FullPath, "", file.FileSize, file.Hash,
+                        file.CreatedTime, file.LastModified, file.LastAccessTime,
+                        "Success", "",
+                        targetFile.FullPath, targetFile.FileSize, targetFile.Hash,
+                        targetFile.CreatedTime, targetFile.LastModified, targetFile.LastAccessTime
                     ));
                 }
                 else
                 {
                     skippedCount++;
                     details.Add(new MigrationDetail(
-                        "Delete", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Skipped", "文件不存在"
+                        "Delete", file.FullPath, "", file.FileSize, file.Hash,
+                        file.CreatedTime, file.LastModified, file.LastAccessTime,
+                        "Skipped", "文件不存在",
+                        targetFile.FullPath, targetFile.FileSize, targetFile.Hash,
+                        targetFile.CreatedTime, targetFile.LastModified, targetFile.LastAccessTime
                     ));
                 }
             }
@@ -82,7 +93,11 @@ public class FileMigrator : IFileMigrator
             {
                 errorCount++;
                 details.Add(new MigrationDetail(
-                    "Delete", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Failed", ex.Message
+                    "Delete", file.FullPath, "", file.FileSize, file.Hash,
+                    file.CreatedTime, file.LastModified, file.LastAccessTime,
+                    "Failed", ex.Message,
+                    targetFile.FullPath, targetFile.FileSize, targetFile.Hash,
+                    targetFile.CreatedTime, targetFile.LastModified, targetFile.LastAccessTime
                 ));
             }
 
