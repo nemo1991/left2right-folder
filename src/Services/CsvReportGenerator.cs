@@ -26,12 +26,12 @@ public class CsvReportGenerator : IReportGenerator
             var sb = new StringBuilder();
 
             // 写入表头（使用半角逗号分隔）
-            sb.AppendLine("Operation,SourcePath,TargetPath,FileSize,CreatedTime,Hash,Status,ErrorMessage");
+            sb.AppendLine("Operation,SourcePath,TargetPath,FileSize,CreatedTime,LastModified,LastAccessed,Hash,Status,ErrorMessage");
 
             // 写入详细记录
             foreach (var detail in report.Details)
             {
-                sb.AppendLine($"{EscapeCsv(detail.Operation)},{EscapeCsv(detail.SourcePath)},{EscapeCsv(detail.TargetPath)},{detail.FileSize},{detail.CreatedTime:yyyy-MM-dd HH:mm:ss},{EscapeCsv(detail.Hash)},{EscapeCsv(detail.Status)},{EscapeCsv(detail.ErrorMessage)}");
+                sb.AppendLine($"{EscapeCsv(detail.Operation)},{EscapeCsv(detail.SourcePath)},{EscapeCsv(detail.TargetPath)},{detail.FileSize},{detail.CreatedTime:yyyy-MM-dd HH:mm:ss},{detail.LastModified:yyyy-MM-dd HH:mm:ss},{detail.LastAccessed:yyyy-MM-dd HH:mm:ss},{EscapeCsv(detail.Hash)},{EscapeCsv(detail.Status)},{EscapeCsv(detail.ErrorMessage)}");
             }
 
             // 写入统计摘要

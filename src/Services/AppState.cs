@@ -61,6 +61,9 @@ public class AppState : IAppState
                 FullPath TEXT NOT NULL,
                 FileName TEXT NOT NULL,
                 FileSize INTEGER NOT NULL,
+                LastModified TEXT,
+                CreatedTime TEXT,
+                LastAccessed TEXT,
                 Hash TEXT,
                 Status TEXT NOT NULL,
                 FOREIGN KEY (SessionId) REFERENCES ScanSessions(Id)
@@ -97,13 +100,16 @@ public class AppState : IAppState
             {
                 using var cmd = _connection.CreateCommand();
                 cmd.CommandText = @"
-                    INSERT INTO ScannedFiles (SessionId, FullPath, FileName, FileSize, Hash, Status)
-                    VALUES (@sessionId, @fullPath, @fileName, @fileSize, @hash, @status)
+                    INSERT INTO ScannedFiles (SessionId, FullPath, FileName, FileSize, LastModified, CreatedTime, LastAccessed, Hash, Status)
+                    VALUES (@sessionId, @fullPath, @fileName, @fileSize, @lastModified, @createdTime, @lastAccessed, @hash, @status)
                 ";
                 cmd.Parameters.AddWithValue("@sessionId", sessionId);
                 cmd.Parameters.AddWithValue("@fullPath", file.FullPath);
                 cmd.Parameters.AddWithValue("@fileName", file.FileName);
                 cmd.Parameters.AddWithValue("@fileSize", file.FileSize);
+                cmd.Parameters.AddWithValue("@lastModified", file.LastModified);
+                cmd.Parameters.AddWithValue("@createdTime", file.CreatedTime);
+                cmd.Parameters.AddWithValue("@lastAccessed", file.LastAccessTime);
                 cmd.Parameters.AddWithValue("@hash", (object?)file.Hash ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@status", file.Status.ToString());
                 await cmd.ExecuteNonQueryAsync();
