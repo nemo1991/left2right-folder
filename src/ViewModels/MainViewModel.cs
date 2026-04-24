@@ -21,7 +21,6 @@ public partial class MainViewModel : ObservableObject
 
     private CancellationTokenSource? _cts;
     private System.Collections.Generic.List<FileEntry> _sourceFiles = new();
-    private System.Collections.Generic.List<FileEntry> _targetFiles = new();
     private file_sync.Models.CompareResult? _compareResult;
     private string? _sessionId;
 
@@ -82,7 +81,6 @@ public partial class MainViewModel : ObservableObject
             ScanButtonContent = "扫描中...";
             Logs.Clear();
             _sourceFiles.Clear();
-            _targetFiles.Clear();
 
             // 生成会话 ID
             _sessionId = Guid.NewGuid().ToString();
@@ -98,23 +96,13 @@ public partial class MainViewModel : ObservableObject
 
             AddLog($"源目录扫描完成：{_sourceFiles.Count} 个文件");
 
-            // 扫描目标目录
-            StatusMessage = "正在扫描目标目录...";
-            var targetProgress = new Progress<string>(file =>
-            {
-                StatusMessage = $"扫描目标目录：{Path.GetFileName(file)}";
-            });
-            _targetFiles = await _fileScanner.ScanAsync(TargetDirectory, targetProgress, ct);
-
-            AddLog($"目标目录扫描完成：{_targetFiles.Count} 个文件");
-
-            // 对比文件
+            // 对比文件（不扫描目标目录，仅检查同名文件）
             StatusMessage = "正在对比文件...";
             var compareProgress = new Progress<string>(msg =>
             {
                 AddLog(msg);
             });
-            _compareResult = await _fileComparator.CompareAsync(_sourceFiles, _targetFiles, _hashCalculator, compareProgress, ct);
+            _compareResult = await _fileComparator.CompareAsync(_sourceFiles, TargetDirectory, _hashCalculator, compareProgress, ct);
 
             ToDeleteCount = _compareResult.ToDelete.Count;
             ToMoveCount = _compareResult.ToMove.Count;
