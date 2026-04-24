@@ -44,6 +44,7 @@ public record FileEntryToDelete(
 public record CompareResult(
     List<FileEntryToDelete> ToDelete,
     List<FileEntry> ToMove,
+    List<FileEntry> Conflicts,  // 冲突文件（同名但 Hash 不同）
     int TotalSource,
     int TotalTarget
 );
@@ -61,6 +62,7 @@ public record MigrationReport(
     int MigratedCount,
     int SkippedCount,
     int ErrorCount,
+    int ConflictCount,
     List<MigrationDetail> Details
 );
 
@@ -70,7 +72,7 @@ public record MigrationReport(
 public record MigrationDetail(
     string Operation,     // Delete / Move / Skip / Error
     string SourcePath,
-    string TargetPath,
+    string TargetPath,    // 移动操作的目标路径 / 删除操作中目标目录已存在的文件路径
     long FileSize,
     string Hash,
     System.DateTime CreatedTime,
@@ -78,10 +80,9 @@ public record MigrationDetail(
     System.DateTime LastAccessed,
     string Status,        // Success / Failed / Skipped
     string ErrorMessage,
-    string TargetFilePath = "",      // 目标目录中对应文件的路径
-    long TargetFileSize = 0,         // 目标文件大小
-    string TargetHash = "",          // 目标文件 Hash
-    System.DateTime TargetCreatedTime = default,  // 目标文件创建时间
-    System.DateTime TargetLastModified = default, // 目标文件最后修改时间
-    System.DateTime TargetLastAccessed = default  // 目标文件最后访问时间
+    long TargetFileSize = 0,         // 目标文件大小（仅删除操作）
+    string TargetHash = "",          // 目标文件 Hash（仅删除操作）
+    System.DateTime TargetCreatedTime = default,  // 目标文件创建时间（仅删除操作）
+    System.DateTime TargetLastModified = default, // 目标文件最后修改时间（仅删除操作）
+    System.DateTime TargetLastAccessed = default  // 目标文件最后访问时间（仅删除操作）
 );

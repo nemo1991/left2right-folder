@@ -26,12 +26,12 @@ public class CsvReportGenerator : IReportGenerator
             var sb = new StringBuilder();
 
             // 写入表头（使用半角逗号分隔）
-            sb.AppendLine("Operation,SourcePath,TargetPath,FileSize,CreatedTime,LastModified,LastAccessed,Hash,Status,ErrorMessage,TargetFilePath,TargetFileSize,TargetHash,TargetCreatedTime,TargetLastModified,TargetLastAccessed");
+            sb.AppendLine("Operation,SourcePath,TargetPath,FileSize,CreatedTime,LastModified,LastAccessed,Hash,Status,ErrorMessage,TargetFileSize,TargetFileHash,TargetFileCreatedTime,TargetFileLastModified,TargetFileLastAccessed");
 
             // 写入详细记录
             foreach (var detail in report.Details)
             {
-                sb.AppendLine($"{EscapeCsv(detail.Operation)},{EscapeCsv(detail.SourcePath)},{EscapeCsv(detail.TargetPath)},{detail.FileSize},{detail.CreatedTime:yyyy-MM-dd HH:mm:ss},{detail.LastModified:yyyy-MM-dd HH:mm:ss},{detail.LastAccessed:yyyy-MM-dd HH:mm:ss},{EscapeCsv(detail.Hash)},{EscapeCsv(detail.Status)},{EscapeCsv(detail.ErrorMessage)},{EscapeCsv(detail.TargetFilePath)},{detail.TargetFileSize},{EscapeCsv(detail.TargetHash)},{(detail.TargetCreatedTime != default ? detail.TargetCreatedTime.ToString("yyyy-MM-dd HH:mm:ss") : "")},{(detail.TargetLastModified != default ? detail.TargetLastModified.ToString("yyyy-MM-dd HH:mm:ss") : "")},{(detail.TargetLastAccessed != default ? detail.TargetLastAccessed.ToString("yyyy-MM-dd HH:mm:ss") : "")}");
+                sb.AppendLine($"{EscapeCsv(detail.Operation)},{EscapeCsv(detail.SourcePath)},{EscapeCsv(detail.TargetPath)},{detail.FileSize},{detail.CreatedTime:yyyy-MM-dd HH:mm:ss},{detail.LastModified:yyyy-MM-dd HH:mm:ss},{detail.LastAccessed:yyyy-MM-dd HH:mm:ss},{EscapeCsv(detail.Hash)},{EscapeCsv(detail.Status)},{EscapeCsv(detail.ErrorMessage)},{detail.TargetFileSize},{EscapeCsv(detail.TargetHash)},{(detail.TargetCreatedTime != default ? detail.TargetCreatedTime.ToString("yyyy-MM-dd HH:mm:ss") : "")},{(detail.TargetLastModified != default ? detail.TargetLastModified.ToString("yyyy-MM-dd HH:mm:ss") : "")},{(detail.TargetLastAccessed != default ? detail.TargetLastAccessed.ToString("yyyy-MM-dd HH:mm:ss") : "")}");
             }
 
             // 写入统计摘要
@@ -45,6 +45,7 @@ public class CsvReportGenerator : IReportGenerator
             sb.AppendLine($"总扫描文件数：{report.TotalScanned}");
             sb.AppendLine($"删除文件数：{report.DeletedCount}");
             sb.AppendLine($"迁移文件数：{report.MigratedCount}");
+            sb.AppendLine($"冲突文件数：{report.ConflictCount}");
             sb.AppendLine($"跳过文件数：{report.SkippedCount}");
             sb.AppendLine($"错误数：{report.ErrorCount}");
 

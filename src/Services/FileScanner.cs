@@ -27,6 +27,8 @@ public class FileScanner : IFileScanner
         return Task.Run(() =>
         {
             var files = new ConcurrentBag<FileEntry>();
+            int count = 0;
+            const int ReportInterval = 100;
 
             if (!Directory.Exists(directory))
             {
@@ -59,7 +61,12 @@ public class FileScanner : IFileScanner
                         info.LastAccessTime
                     ));
 
-                    progress?.Report(filePath);
+                    count++;
+                    // 每 100 个文件报告一次进度，避免 UI 线程过载
+                    if (count % ReportInterval == 0 && progress != null)
+                    {
+                        progress.Report(filePath);
+                    }
                 }
                 catch (UnauthorizedAccessException)
                 {
@@ -69,6 +76,12 @@ public class FileScanner : IFileScanner
                 {
                     // 跳过无法访问的文件
                 }
+            }
+
+            // 最后一次进度报告
+            if (progress != null && count > 0)
+            {
+                progress.Report($"扫描完成，共 {count} 个文件");
             }
 
             return files.ToList();

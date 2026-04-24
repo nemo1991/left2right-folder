@@ -36,6 +36,8 @@ public class FileComparator : IFileComparator
         var toDelete = new List<FileEntryToDelete>();
         var toMove = new List<FileEntry>();
         var conflicts = new List<FileEntry>();
+        int count = 0;
+        const int ReportInterval = 100;
 
         foreach (var sourceFile in sourceFiles)
         {
@@ -71,23 +73,32 @@ public class FileComparator : IFileComparator
                         sourceFile with { Status = FileStatus.ToDelete, Hash = sourceHash },
                         targetFile
                     ));
-                    progress?.Report($"待删除：{sourceFile.FileName} (目标目录存在相同文件)");
+                    if (++count % ReportInterval == 0)
+                        progress?.Report($"已对比 {count}/{sourceFiles.Count} 个文件");
                 }
                 else
                 {
                     // Hash 不一致，标记冲突
                     conflicts.Add(sourceFile with { Status = FileStatus.Error, Hash = sourceHash });
-                    progress?.Report($"冲突：{sourceFile.FileName} (同名但内容不同)");
+                    if (++count % ReportInterval == 0)
+                        progress?.Report($"已对比 {count}/{sourceFiles.Count} 个文件");
                 }
             }
             else
             {
                 // 目标目录没有同名文件，标记移动
                 toMove.Add(sourceFile with { Status = FileStatus.ToMove });
-                progress?.Report($"待移动：{sourceFile.FileName}");
+                if (++count % ReportInterval == 0)
+                    progress?.Report($"已对比 {count}/{sourceFiles.Count} 个文件");
             }
         }
 
-        return new file_sync.Models.CompareResult(toDelete, toMove, sourceFiles.Count, toDelete.Count + toMove.Count + conflicts.Count);
+        // 最后一次进度报告
+        if (progress != null && sourceFiles.Count > 0)
+        {
+            progress.Report($"对比完成，共 {sourceFiles.Count} 个文件");
+        }
+
+        return new file_sync.Models.CompareResult(toDelete, toMove, conflicts, sourceFiles.Count, toDelete.Count + toMove.Count + conflicts.Count);
     }
 }

@@ -31,13 +31,17 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _isProgressIndeterminate;
     [ObservableProperty] private bool _canScan = false;
     [ObservableProperty] private bool _canMigrate;
+    [ObservableProperty] private bool _canCancel;
     [ObservableProperty] private string _scanButtonContent = "扫描目录";
     [ObservableProperty] private string _migrateButtonContent = "开始迁移";
 
     [ObservableProperty] private int _totalScanned;
     [ObservableProperty] private int _toDeleteCount;
     [ObservableProperty] private int _toMoveCount;
+    [ObservableProperty] private int _conflictCount;
     [ObservableProperty] private ObservableCollection<LogEntry> _logs = new();
+
+    private System.Collections.Generic.List<FileEntry> _conflicts = new();
 
     public MainViewModel(
         IFileScanner fileScanner,
@@ -76,6 +80,7 @@ public partial class MainViewModel : ObservableObject
         {
             CanScan = false;
             CanMigrate = false;
+            CanCancel = true;
             IsProgressIndeterminate = true;
             StatusMessage = "正在扫描源目录...";
             ScanButtonContent = "扫描中...";
@@ -106,21 +111,25 @@ public partial class MainViewModel : ObservableObject
 
             ToDeleteCount = _compareResult.ToDelete.Count;
             ToMoveCount = _compareResult.ToMove.Count;
+            _conflicts = _compareResult.Conflicts;
+            ConflictCount = _conflicts.Count;
 
-            StatusMessage = $"扫描完成 - 待删除：{ToDeleteCount}, 待移动：{ToMoveCount}";
+            StatusMessage = $"扫描完成 - 待删除：{ToDeleteCount}, 待移动：{ToMoveCount}, 冲突：{ConflictCount}";
             ScanButtonContent = "重新扫描";
             CanScan = true;
-            CanMigrate = true;
+            CanMigrate = ToDeleteCount > 0 || ToMoveCount > 0;
+            CanCancel = false;
             IsProgressIndeterminate = false;
             ProgressValue = 100;
 
-            AddLog($"对比完成 - 待删除：{ToDeleteCount}, 待移动：{ToMoveCount}");
+            AddLog($"对比完成 - 待删除：{ToDeleteCount}, 待移动：{ToMoveCount}, 冲突：{ConflictCount}");
         }
         catch (OperationCanceledException)
         {
             StatusMessage = "已取消扫描";
             ScanButtonContent = "扫描目录";
             CanScan = true;
+            CanCancel = false;
             IsProgressIndeterminate = false;
         }
         catch (Exception ex)
@@ -128,6 +137,7 @@ public partial class MainViewModel : ObservableObject
             StatusMessage = $"扫描失败：{ex.Message}";
             ScanButtonContent = "扫描目录";
             CanScan = true;
+            CanCancel = false;
             IsProgressIndeterminate = false;
             AddLog($"错误：{ex.Message}", true);
         }
@@ -144,6 +154,7 @@ public partial class MainViewModel : ObservableObject
         {
             CanMigrate = false;
             CanScan = false;
+            CanCancel = true;
             IsProgressIndeterminate = false;
             ProgressValue = 0;
             StatusMessage = "正在迁移文件...";
@@ -151,14 +162,20 @@ public partial class MainViewModel : ObservableObject
 
             var progress = new Progress<MigrationProgress>(p =>
             {
-                ProgressValue = (double)p.Completed / p.Total * 100;
-                StatusMessage = $"{p.Operation}: {p.Completed}/{p.Total} - {Path.GetFileName(p.CurrentFile)}";
+                // 进度条每 50 个文件更新一次，避免 UI 过载
+                if (p.Completed % 50 == 0 || p.Completed == p.Total)
+                {
+                    ProgressValue = (double)p.Completed / p.Total * 100;
+                    StatusMessage = $"{p.Operation}: {p.Completed}/{p.Total}";
+                }
+                // 日志每条都记录
                 AddLog($"{p.Operation}: {Path.GetFileName(p.CurrentFile)}");
             });
 
             var result = await _fileMigrator.MigrateAsync(
                 _compareResult.ToDelete,
                 _compareResult.ToMove,
+                _conflicts,
                 SourceDirectory,
                 TargetDirectory,
                 progress,
@@ -175,6 +192,7 @@ public partial class MainViewModel : ObservableObject
                 result.MigratedCount,
                 result.SkippedCount,
                 result.ErrorCount,
+                _conflicts.Count,
                 result.Details
             );
 
@@ -182,9 +200,11 @@ public partial class MainViewModel : ObservableObject
                 $"迁移报告_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
             await _reportGenerator.GenerateCsvAsync(report, reportPath);
 
-            StatusMessage = $"迁移完成 - 删除：{result.DeletedCount}, 移动：{result.MigratedCount}, 错误：{result.ErrorCount}";
+            StatusMessage = $"迁移完成 - 删除：{result.DeletedCount}, 移动：{result.MigratedCount}, 冲突：{_conflicts.Count}, 错误：{result.ErrorCount}";
             MigrateButtonContent = "迁移完成";
             CanScan = true;
+            CanMigrate = true;
+            CanCancel = false;
 
             AddLog($"迁移完成！报告已保存到：{reportPath}");
 
@@ -200,6 +220,7 @@ public partial class MainViewModel : ObservableObject
             MigrateButtonContent = "开始迁移";
             CanMigrate = true;
             CanScan = true;
+            CanCancel = false;
         }
         catch (Exception ex)
         {
@@ -207,6 +228,7 @@ public partial class MainViewModel : ObservableObject
             MigrateButtonContent = "开始迁移";
             CanMigrate = true;
             CanScan = true;
+            CanCancel = false;
             AddLog($"错误：{ex.Message}", true);
         }
     }

@@ -15,6 +15,7 @@ public interface IFileMigrator
     Task<MigrationResult> MigrateAsync(
         List<FileEntryToDelete> toDelete,
         List<FileEntry> toMove,
+        List<FileEntry> conflicts,
         string sourceDirectory,
         string targetDirectory,
         IProgress<MigrationProgress>? progress = null,
@@ -44,6 +45,7 @@ public class FileMigrator : IFileMigrator
     public async Task<MigrationResult> MigrateAsync(
         List<FileEntryToDelete> toDelete,
         List<FileEntry> toMove,
+        List<FileEntry> conflicts,
         string sourceDirectory,
         string targetDirectory,
         IProgress<MigrationProgress>? progress = null,
@@ -52,8 +54,19 @@ public class FileMigrator : IFileMigrator
         var details = new List<MigrationDetail>();
         int deletedCount = 0;
         int migratedCount = 0;
-        int skippedCount = 0;
+        int skippedCount = conflicts.Count; // 冲突文件计入跳过
         int errorCount = 0;
+
+        // 先记录冲突文件
+        foreach (var conflict in conflicts)
+        {
+            details.Add(new MigrationDetail(
+                "Conflict", conflict.FullPath, "", conflict.FileSize, conflict.Hash,
+                conflict.CreatedTime, conflict.LastModified, conflict.LastAccessTime,
+                "Skipped", "文件名冲突 - 内容不同",
+                0, "", default, default, default
+            ));
+        }
 
         // 先执行删除操作
         foreach (var fileEntry in toDelete)
@@ -70,10 +83,10 @@ public class FileMigrator : IFileMigrator
                     File.Delete(file.FullPath);
                     deletedCount++;
                     details.Add(new MigrationDetail(
-                        "Delete", file.FullPath, "", file.FileSize, file.Hash,
+                        "Delete", file.FullPath, targetFile.FullPath, file.FileSize, file.Hash,
                         file.CreatedTime, file.LastModified, file.LastAccessTime,
                         "Success", "",
-                        targetFile.FullPath, targetFile.FileSize, targetFile.Hash,
+                        targetFile.FileSize, targetFile.Hash,
                         targetFile.CreatedTime, targetFile.LastModified, targetFile.LastAccessTime
                     ));
                 }
@@ -81,10 +94,10 @@ public class FileMigrator : IFileMigrator
                 {
                     skippedCount++;
                     details.Add(new MigrationDetail(
-                        "Delete", file.FullPath, "", file.FileSize, file.Hash,
+                        "Delete", file.FullPath, targetFile.FullPath, file.FileSize, file.Hash,
                         file.CreatedTime, file.LastModified, file.LastAccessTime,
                         "Skipped", "文件不存在",
-                        targetFile.FullPath, targetFile.FileSize, targetFile.Hash,
+                        targetFile.FileSize, targetFile.Hash,
                         targetFile.CreatedTime, targetFile.LastModified, targetFile.LastAccessTime
                     ));
                 }
@@ -93,15 +106,15 @@ public class FileMigrator : IFileMigrator
             {
                 errorCount++;
                 details.Add(new MigrationDetail(
-                    "Delete", file.FullPath, "", file.FileSize, file.Hash,
+                    "Delete", file.FullPath, targetFile.FullPath, file.FileSize, file.Hash,
                     file.CreatedTime, file.LastModified, file.LastAccessTime,
                     "Failed", ex.Message,
-                    targetFile.FullPath, targetFile.FileSize, targetFile.Hash,
+                    targetFile.FileSize, targetFile.Hash,
                     targetFile.CreatedTime, targetFile.LastModified, targetFile.LastAccessTime
                 ));
             }
 
-            progress?.Report(new MigrationProgress(file.FullPath, deletedCount + migratedCount, toDelete.Count + toMove.Count, "删除"));
+            progress?.Report(new MigrationProgress(file.FullPath, deletedCount + migratedCount, toDelete.Count + toMove.Count + conflicts.Count, "删除"));
         }
 
         // 执行移动操作
@@ -115,7 +128,8 @@ public class FileMigrator : IFileMigrator
                 {
                     skippedCount++;
                     details.Add(new MigrationDetail(
-                        "Move", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Skipped", "文件不存在"
+                        "Move", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Skipped", "文件不存在",
+                        0, "", default, default, default
                     ));
                     continue;
                 }
@@ -145,18 +159,20 @@ public class FileMigrator : IFileMigrator
                 File.Move(file.FullPath, targetPath);
                 migratedCount++;
                 details.Add(new MigrationDetail(
-                    "Move", file.FullPath, targetPath, file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Success", ""
+                    "Move", file.FullPath, targetPath, file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Success", "",
+                    0, "", default, default, default
                 ));
             }
             catch (Exception ex)
             {
                 errorCount++;
                 details.Add(new MigrationDetail(
-                    "Move", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Failed", ex.Message
+                    "Move", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Failed", ex.Message,
+                    0, "", default, default, default
                 ));
             }
 
-            progress?.Report(new MigrationProgress(file.FullPath, deletedCount + migratedCount, toDelete.Count + toMove.Count, "移动"));
+            progress?.Report(new MigrationProgress(file.FullPath, deletedCount + migratedCount, toDelete.Count + toMove.Count + conflicts.Count, "移动"));
         }
 
         return new MigrationResult(deletedCount, migratedCount, skippedCount, errorCount, details);
