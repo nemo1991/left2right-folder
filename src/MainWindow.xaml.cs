@@ -43,6 +43,7 @@ public partial class MainWindow : Window
         BrowseTargetButton.Click += BrowseTargetButton_Click;
         ScanButton.Click += ScanButton_Click;
         MigrateButton.Click += MigrateButton_Click;
+        CancelButton.Click += CancelButton_Click;
     }
 
     private async void BrowseSourceButton_Click(object sender, RoutedEventArgs e)
@@ -63,6 +64,11 @@ public partial class MainWindow : Window
     private async void MigrateButton_Click(object sender, RoutedEventArgs e)
     {
         await _viewModel.MigrateAsync();
+    }
+
+    private void CancelButton_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.Cancel();
     }
 
     private async Task ShowFolderDialogAsync(string type)

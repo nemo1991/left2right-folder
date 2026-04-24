@@ -5,7 +5,6 @@ using System.Windows;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using file_sync.Models;
 using file_sync.Services;
 
@@ -224,8 +223,7 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private void Cancel()
+    public void Cancel()
     {
         _cts?.Cancel();
         StatusMessage = "正在取消...";
