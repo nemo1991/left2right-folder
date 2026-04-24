@@ -26,79 +26,74 @@ public interface IFileComparator
 /// </summary>
 public class FileComparator : IFileComparator
 {
-    public async Task<file_sync.Models.CompareResult> CompareAsync(
+    public Task<file_sync.Models.CompareResult> CompareAsync(
         List<FileEntry> sourceFiles,
         string targetDirectory,
         IHashCalculator hashCalculator,
         IProgress<string>? progress = null,
         CancellationToken ct = default)
     {
-        var toDelete = new List<FileEntryToDelete>();
-        var toMove = new List<FileEntry>();
-        var conflicts = new List<FileEntry>();
-        int count = 0;
-        const int ReportInterval = 100;
-
-        foreach (var sourceFile in sourceFiles)
+        return Task.Run(async () =>
         {
-            ct.ThrowIfCancellationRequested();
+            var toDelete = new List<FileEntryToDelete>();
+            var toMove = new List<FileEntry>();
+            var conflicts = new List<FileEntry>();
+            int count = 0;
+            const int ReportInterval = 100;
 
-            // 检查目标目录是否有同名文件
-            var targetPath = Path.Combine(targetDirectory, sourceFile.FileName);
-            var targetExists = File.Exists(targetPath);
-
-            if (targetExists)
+            foreach (var sourceFile in sourceFiles)
             {
-                // 计算源文件 Hash
-                var sourceHash = await hashCalculator.ComputeHashAsync(sourceFile.FullPath, null, ct);
+                ct.ThrowIfCancellationRequested();
 
-                // 计算目标文件 Hash 并比较
-                var targetHash = await hashCalculator.ComputeHashAsync(targetPath, null, ct);
+                var targetPath = Path.Combine(targetDirectory, sourceFile.FileName);
+                var targetExists = File.Exists(targetPath);
 
-                if (sourceHash == targetHash)
+                if (targetExists)
                 {
-                    // Hash 一致，标记删除
-                    var targetInfo = new FileInfo(targetPath);
-                    var targetFile = new FileEntry(
-                        targetPath,
-                        targetInfo.Name,
-                        targetInfo.Length,
-                        targetInfo.LastWriteTime,
-                        targetInfo.CreationTime,
-                        targetInfo.LastAccessTime,
-                        targetHash
-                    );
+                    var sourceHash = await hashCalculator.ComputeHashAsync(sourceFile.FullPath, null, ct);
+                    var targetHash = await hashCalculator.ComputeHashAsync(targetPath, null, ct);
 
-                    toDelete.Add(new FileEntryToDelete(
-                        sourceFile with { Status = FileStatus.ToDelete, Hash = sourceHash },
-                        targetFile
-                    ));
-                    if (++count % ReportInterval == 0)
-                        progress?.Report($"已对比 {count}/{sourceFiles.Count} 个文件");
+                    if (sourceHash == targetHash)
+                    {
+                        var targetInfo = new FileInfo(targetPath);
+                        var targetFile = new FileEntry(
+                            targetPath,
+                            targetInfo.Name,
+                            targetInfo.Length,
+                            targetInfo.LastWriteTime,
+                            targetInfo.CreationTime,
+                            targetInfo.LastAccessTime,
+                            targetHash
+                        );
+
+                        toDelete.Add(new FileEntryToDelete(
+                            sourceFile with { Status = FileStatus.ToDelete, Hash = sourceHash },
+                            targetFile
+                        ));
+                        if (++count % ReportInterval == 0)
+                            progress?.Report($"已对比 {count}/{sourceFiles.Count} 个文件");
+                    }
+                    else
+                    {
+                        conflicts.Add(sourceFile with { Status = FileStatus.Error, Hash = sourceHash });
+                        if (++count % ReportInterval == 0)
+                            progress?.Report($"已对比 {count}/{sourceFiles.Count} 个文件");
+                    }
                 }
                 else
                 {
-                    // Hash 不一致，标记冲突
-                    conflicts.Add(sourceFile with { Status = FileStatus.Error, Hash = sourceHash });
+                    toMove.Add(sourceFile with { Status = FileStatus.ToMove });
                     if (++count % ReportInterval == 0)
                         progress?.Report($"已对比 {count}/{sourceFiles.Count} 个文件");
                 }
             }
-            else
+
+            if (progress != null && sourceFiles.Count > 0)
             {
-                // 目标目录没有同名文件，标记移动
-                toMove.Add(sourceFile with { Status = FileStatus.ToMove });
-                if (++count % ReportInterval == 0)
-                    progress?.Report($"已对比 {count}/{sourceFiles.Count} 个文件");
+                progress.Report($"对比完成，共 {sourceFiles.Count} 个文件");
             }
-        }
 
-        // 最后一次进度报告
-        if (progress != null && sourceFiles.Count > 0)
-        {
-            progress.Report($"对比完成，共 {sourceFiles.Count} 个文件");
-        }
-
-        return new file_sync.Models.CompareResult(toDelete, toMove, conflicts, sourceFiles.Count, toDelete.Count + toMove.Count + conflicts.Count);
+            return new file_sync.Models.CompareResult(toDelete, toMove, conflicts, sourceFiles.Count, toDelete.Count + toMove.Count + conflicts.Count);
+        }, ct);
     }
 }

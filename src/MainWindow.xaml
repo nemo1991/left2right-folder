@@ -61,8 +61,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="原目录:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <TextBox Grid.Column="1" Text="{Binding SourceDirectory, UpdateSourceTrigger=PropertyChanged}"
-                             IsEnabled="False" Background="#FAFAFA"/>
+                    <TextBox Grid.Column="1" Text="{Binding SourceDirectory, UpdateSourceTrigger=PropertyChanged}"/>
                     <Button x:Name="BrowseSourceButton" Grid.Column="2" Content="浏览..."
                             Width="80" Margin="10,0,0,0"/>
                 </Grid>
@@ -75,8 +74,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="目标目录:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <TextBox Grid.Column="1" Text="{Binding TargetDirectory, UpdateSourceTrigger=PropertyChanged}"
-                             IsEnabled="False" Background="#FAFAFA"/>
+                    <TextBox Grid.Column="1" Text="{Binding TargetDirectory, UpdateSourceTrigger=PropertyChanged}"/>
                     <Button x:Name="BrowseTargetButton" Grid.Column="2" Content="浏览..."
                             Width="80" Margin="10,0,0,0"/>
                 </Grid>
@@ -136,7 +134,8 @@
 
         <!-- 日志区域 -->
         <GroupBox Grid.Row="3" Header="操作日志" Padding="10">
-            <ListBox ItemsSource="{Binding Logs}" BorderThickness="0">
+            <ListBox x:Name="LogListBox" ItemsSource="{Binding Logs}" BorderThickness="0"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding Message}" TextWrapping="Wrap"

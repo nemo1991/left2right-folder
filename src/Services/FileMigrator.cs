@@ -42,7 +42,7 @@ public record MigrationProgress(
 /// </summary>
 public class FileMigrator : IFileMigrator
 {
-    public async Task<MigrationResult> MigrateAsync(
+    public Task<MigrationResult> MigrateAsync(
         List<FileEntryToDelete> toDelete,
         List<FileEntry> toMove,
         List<FileEntry> conflicts,
@@ -51,130 +51,129 @@ public class FileMigrator : IFileMigrator
         IProgress<MigrationProgress>? progress = null,
         CancellationToken ct = default)
     {
-        var details = new List<MigrationDetail>();
-        int deletedCount = 0;
-        int migratedCount = 0;
-        int skippedCount = conflicts.Count; // 冲突文件计入跳过
-        int errorCount = 0;
-
-        // 先记录冲突文件
-        foreach (var conflict in conflicts)
+        return Task.Run(() =>
         {
-            details.Add(new MigrationDetail(
-                "Conflict", conflict.FullPath, "", conflict.FileSize, conflict.Hash,
-                conflict.CreatedTime, conflict.LastModified, conflict.LastAccessTime,
-                "Skipped", "文件名冲突 - 内容不同",
-                0, "", default, default, default
-            ));
-        }
+            var details = new List<MigrationDetail>();
+            int deletedCount = 0;
+            int migratedCount = 0;
+            int skippedCount = conflicts.Count;
+            int errorCount = 0;
 
-        // 先执行删除操作
-        foreach (var fileEntry in toDelete)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            var file = fileEntry.SourceFile;
-            var targetFile = fileEntry.TargetFile;
-
-            try
+            // 先记录冲突文件
+            foreach (var conflict in conflicts)
             {
-                if (File.Exists(file.FullPath))
-                {
-                    File.Delete(file.FullPath);
-                    deletedCount++;
-                    details.Add(new MigrationDetail(
-                        "Delete", file.FullPath, targetFile.FullPath, file.FileSize, file.Hash,
-                        file.CreatedTime, file.LastModified, file.LastAccessTime,
-                        "Success", "",
-                        targetFile.FileSize, targetFile.Hash,
-                        targetFile.CreatedTime, targetFile.LastModified, targetFile.LastAccessTime
-                    ));
-                }
-                else
-                {
-                    skippedCount++;
-                    details.Add(new MigrationDetail(
-                        "Delete", file.FullPath, targetFile.FullPath, file.FileSize, file.Hash,
-                        file.CreatedTime, file.LastModified, file.LastAccessTime,
-                        "Skipped", "文件不存在",
-                        targetFile.FileSize, targetFile.Hash,
-                        targetFile.CreatedTime, targetFile.LastModified, targetFile.LastAccessTime
-                    ));
-                }
-            }
-            catch (Exception ex)
-            {
-                errorCount++;
                 details.Add(new MigrationDetail(
-                    "Delete", file.FullPath, targetFile.FullPath, file.FileSize, file.Hash,
-                    file.CreatedTime, file.LastModified, file.LastAccessTime,
-                    "Failed", ex.Message,
-                    targetFile.FileSize, targetFile.Hash,
-                    targetFile.CreatedTime, targetFile.LastModified, targetFile.LastAccessTime
+                    "Conflict", conflict.FullPath, "", conflict.FileSize, conflict.Hash,
+                    conflict.CreatedTime, conflict.LastModified, conflict.LastAccessTime,
+                    "Skipped", "文件名冲突 - 内容不同",
+                    0, "", default, default, default
                 ));
             }
 
-            progress?.Report(new MigrationProgress(file.FullPath, deletedCount + migratedCount, toDelete.Count + toMove.Count + conflicts.Count, "删除"));
-        }
-
-        // 执行移动操作
-        foreach (var file in toMove)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            try
+            // 先执行删除操作
+            foreach (var fileEntry in toDelete)
             {
-                if (!File.Exists(file.FullPath))
+                ct.ThrowIfCancellationRequested();
+
+                var file = fileEntry.SourceFile;
+                var targetFile = fileEntry.TargetFile;
+
+                try
                 {
-                    skippedCount++;
+                    if (File.Exists(file.FullPath))
+                    {
+                        File.Delete(file.FullPath);
+                        deletedCount++;
+                        details.Add(new MigrationDetail(
+                            "Delete", file.FullPath, targetFile.FullPath, file.FileSize, file.Hash,
+                            file.CreatedTime, file.LastModified, file.LastAccessTime,
+                            "Success", "",
+                            targetFile.FileSize, targetFile.Hash,
+                            targetFile.CreatedTime, targetFile.LastModified, targetFile.LastAccessTime
+                        ));
+                    }
+                    else
+                    {
+                        skippedCount++;
+                        details.Add(new MigrationDetail(
+                            "Delete", file.FullPath, targetFile.FullPath, file.FileSize, file.Hash,
+                            file.CreatedTime, file.LastModified, file.LastAccessTime,
+                            "Skipped", "文件不存在",
+                            targetFile.FileSize, targetFile.Hash,
+                            targetFile.CreatedTime, targetFile.LastModified, targetFile.LastAccessTime
+                        ));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errorCount++;
                     details.Add(new MigrationDetail(
-                        "Move", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Skipped", "文件不存在",
+                        "Delete", file.FullPath, targetFile.FullPath, file.FileSize, file.Hash,
+                        file.CreatedTime, file.LastModified, file.LastAccessTime,
+                        "Failed", ex.Message,
+                        targetFile.FileSize, targetFile.Hash,
+                        targetFile.CreatedTime, targetFile.LastModified, targetFile.LastAccessTime
+                    ));
+                }
+
+                progress?.Report(new MigrationProgress(file.FullPath, deletedCount + migratedCount, toDelete.Count + toMove.Count + conflicts.Count, "删除"));
+            }
+
+            // 执行移动操作
+            foreach (var file in toMove)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                try
+                {
+                    if (!File.Exists(file.FullPath))
+                    {
+                        skippedCount++;
+                        details.Add(new MigrationDetail(
+                            "Move", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Skipped", "文件不存在",
+                            0, "", default, default, default
+                        ));
+                        continue;
+                    }
+
+                    var relativePath = Path.GetRelativePath(sourceDirectory, file.FullPath);
+                    var targetPath = Path.Combine(targetDirectory, relativePath);
+
+                    var targetDir = Path.GetDirectoryName(targetPath)!;
+                    Directory.CreateDirectory(targetDir);
+
+                    if (File.Exists(targetPath))
+                    {
+                        var baseName = Path.GetFileNameWithoutExtension(file.FileName);
+                        var extension = Path.GetExtension(file.FileName);
+                        var counter = 1;
+                        do
+                        {
+                            targetPath = Path.Combine(targetDir, $"{baseName}_{counter}{extension}");
+                            counter++;
+                        } while (File.Exists(targetPath));
+                    }
+
+                    File.Move(file.FullPath, targetPath);
+                    migratedCount++;
+                    details.Add(new MigrationDetail(
+                        "Move", file.FullPath, targetPath, file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Success", "",
                         0, "", default, default, default
                     ));
-                    continue;
                 }
-
-                // 计算目标路径 - 使用源目录的相对路径
-                var relativePath = Path.GetRelativePath(sourceDirectory, file.FullPath);
-                var targetPath = Path.Combine(targetDirectory, relativePath);
-
-                // 确保目标目录存在
-                var targetDir = Path.GetDirectoryName(targetPath)!;
-                Directory.CreateDirectory(targetDir);
-
-                // 如果目标文件已存在，添加后缀避免冲突
-                if (File.Exists(targetPath))
+                catch (Exception ex)
                 {
-                    var baseName = Path.GetFileNameWithoutExtension(file.FileName);
-                    var extension = Path.GetExtension(file.FileName);
-                    var counter = 1;
-                    do
-                    {
-                        targetPath = Path.Combine(targetDir, $"{baseName}_{counter}{extension}");
-                        counter++;
-                    } while (File.Exists(targetPath));
+                    errorCount++;
+                    details.Add(new MigrationDetail(
+                        "Move", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Failed", ex.Message,
+                        0, "", default, default, default
+                    ));
                 }
 
-                // 移动文件
-                File.Move(file.FullPath, targetPath);
-                migratedCount++;
-                details.Add(new MigrationDetail(
-                    "Move", file.FullPath, targetPath, file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Success", "",
-                    0, "", default, default, default
-                ));
-            }
-            catch (Exception ex)
-            {
-                errorCount++;
-                details.Add(new MigrationDetail(
-                    "Move", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, file.LastModified, file.LastAccessTime, "Failed", ex.Message,
-                    0, "", default, default, default
-                ));
+                progress?.Report(new MigrationProgress(file.FullPath, deletedCount + migratedCount, toDelete.Count + toMove.Count + conflicts.Count, "移动"));
             }
 
-            progress?.Report(new MigrationProgress(file.FullPath, deletedCount + migratedCount, toDelete.Count + toMove.Count + conflicts.Count, "移动"));
-        }
-
-        return new MigrationResult(deletedCount, migratedCount, skippedCount, errorCount, details);
+            return new MigrationResult(deletedCount, migratedCount, skippedCount, errorCount, details);
+        }, ct);
     }
 }

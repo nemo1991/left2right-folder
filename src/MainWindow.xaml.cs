@@ -1,4 +1,6 @@
 using System;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
@@ -44,6 +46,23 @@ public partial class MainWindow : Window
         ScanButton.Click += ScanButton_Click;
         MigrateButton.Click += MigrateButton_Click;
         CancelButton.Click += CancelButton_Click;
+
+        // 日志自动滚动
+        SubscribeToLogCollection();
+    }
+
+    private void SubscribeToLogCollection()
+    {
+        if (_viewModel.Logs is ObservableCollection<LogEntry> collection)
+        {
+            collection.CollectionChanged += (s, e) =>
+            {
+                if (e.Action == NotifyCollectionChangedAction.Add && LogListBox.Items.Count > 0)
+                {
+                    LogListBox.ScrollIntoView(LogListBox.Items[LogListBox.Items.Count - 1]);
+                }
+            };
+        }
     }
 
     private async void BrowseSourceButton_Click(object sender, RoutedEventArgs e)

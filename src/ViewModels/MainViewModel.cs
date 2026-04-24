@@ -61,17 +61,40 @@ public partial class MainViewModel : ObservableObject
 
     partial void OnSourceDirectoryChanged(string value)
     {
+        ToDeleteCount = 0;
+        ToMoveCount = 0;
+        ConflictCount = 0;
+        TotalScanned = 0;
         CanScan = !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(TargetDirectory);
     }
     partial void OnTargetDirectoryChanged(string value)
     {
+        ToDeleteCount = 0;
+        ToMoveCount = 0;
+        ConflictCount = 0;
+        TotalScanned = 0;
         CanScan = !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(SourceDirectory);
     }
 
     public async Task ScanDirectoriesAsync()
     {
         if (string.IsNullOrEmpty(SourceDirectory) || string.IsNullOrEmpty(TargetDirectory))
+        {
+            AddLog("错误：请先选择原目录和目标目录", true);
             return;
+        }
+
+        if (!Directory.Exists(SourceDirectory))
+        {
+            AddLog($"错误：原目录不存在：{SourceDirectory}", true);
+            return;
+        }
+
+        if (!Directory.Exists(TargetDirectory))
+        {
+            AddLog($"错误：目标目录不存在：{TargetDirectory}", true);
+            return;
+        }
 
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
@@ -84,8 +107,13 @@ public partial class MainViewModel : ObservableObject
             IsProgressIndeterminate = true;
             StatusMessage = "正在扫描源目录...";
             ScanButtonContent = "扫描中...";
+            MigrateButtonContent = "开始迁移";
             Logs.Clear();
             _sourceFiles.Clear();
+            TotalScanned = 0;
+            ToDeleteCount = 0;
+            ToMoveCount = 0;
+            ConflictCount = 0;
 
             // 生成会话 ID
             _sessionId = Guid.NewGuid().ToString();
