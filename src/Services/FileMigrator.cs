@@ -15,6 +15,7 @@ public interface IFileMigrator
     Task<MigrationResult> MigrateAsync(
         List<FileEntry> toDelete,
         List<FileEntry> toMove,
+        string sourceDirectory,
         string targetDirectory,
         IProgress<MigrationProgress>? progress = null,
         CancellationToken ct = default);
@@ -43,6 +44,7 @@ public class FileMigrator : IFileMigrator
     public async Task<MigrationResult> MigrateAsync(
         List<FileEntry> toDelete,
         List<FileEntry> toMove,
+        string sourceDirectory,
         string targetDirectory,
         IProgress<MigrationProgress>? progress = null,
         CancellationToken ct = default)
@@ -103,8 +105,8 @@ public class FileMigrator : IFileMigrator
                     continue;
                 }
 
-                // 计算目标路径
-                var relativePath = GetRelativePath(file.FullPath, Path.GetPathRoot(file.FullPath)!);
+                // 计算目标路径 - 使用源目录的相对路径
+                var relativePath = Path.GetRelativePath(sourceDirectory, file.FullPath);
                 var targetPath = Path.Combine(targetDirectory, relativePath);
 
                 // 确保目标目录存在
@@ -143,14 +145,5 @@ public class FileMigrator : IFileMigrator
         }
 
         return new MigrationResult(deletedCount, migratedCount, skippedCount, errorCount, details);
-    }
-
-    private string GetRelativePath(string fullPath, string rootPath)
-    {
-        if (string.IsNullOrEmpty(fullPath) || string.IsNullOrEmpty(rootPath))
-            return "";
-
-        var relative = fullPath.Substring(rootPath.Length).TrimStart(Path.DirectorySeparatorChar);
-        return relative;
     }
 }

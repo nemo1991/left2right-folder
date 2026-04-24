@@ -57,7 +57,7 @@ public partial class MainViewModel : ObservableObject
         _appState = appState;
     }
 
-    partial void OnSourceDirectoryChanged(string value) => CanScan = !string.IsNullOrEmpty(value);
+    partial void OnSourceDirectoryChanged(string value) => CanScan = !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(TargetDirectory);
     partial void OnTargetDirectoryChanged(string value) => CanScan = !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(SourceDirectory);
 
     [RelayCommand(CanExecute = nameof(CanScan))]
@@ -168,6 +168,7 @@ public partial class MainViewModel : ObservableObject
             var result = await _fileMigrator.MigrateAsync(
                 _compareResult.ToDelete,
                 _compareResult.ToMove,
+                SourceDirectory,
                 TargetDirectory,
                 progress,
                 ct);
@@ -248,11 +249,12 @@ public partial class MainViewModel : ObservableObject
         // 在 UI 线程添加
         Application.Current?.Dispatcher.Invoke(() =>
         {
-            Logs.Insert(0, log);
+            // 使用 Add 而非 Insert(0) 避免频繁重排，日志顺序通过 ItemsSource 反转显示
+            Logs.Add(log);
             // 限制日志数量
             while (Logs.Count > 1000)
             {
-                Logs.RemoveAt(Logs.Count - 1);
+                Logs.RemoveAt(0);
             }
         });
     }

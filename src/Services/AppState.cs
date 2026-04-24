@@ -78,11 +78,11 @@ public class AppState : IAppState
         using var cmd = _connection.CreateCommand();
         cmd.CommandText = @"
             INSERT OR REPLACE INTO ScanSessions (Id, SourceDir, TargetDir, CreatedAt, Status)
-            VALUES ($sessionId, $sourceDir, $targetDir, datetime('now'), 'Active')
+            VALUES (@sessionId, @sourceDir, @targetDir, datetime('now'), 'Active')
         ";
-        cmd.Parameters.AddWithValue("$sessionId", sessionId);
-        cmd.Parameters.AddWithValue("$sourceDir", sourceDir);
-        cmd.Parameters.AddWithValue("$targetDir", targetDir);
+        cmd.Parameters.AddWithValue("@sessionId", sessionId);
+        cmd.Parameters.AddWithValue("@sourceDir", sourceDir);
+        cmd.Parameters.AddWithValue("@targetDir", targetDir);
         await cmd.ExecuteNonQueryAsync();
     }
 
@@ -98,14 +98,14 @@ public class AppState : IAppState
                 using var cmd = _connection.CreateCommand();
                 cmd.CommandText = @"
                     INSERT INTO ScannedFiles (SessionId, FullPath, FileName, FileSize, Hash, Status)
-                    VALUES ($sessionId, $fullPath, $fileName, $fileSize, $hash, $status)
+                    VALUES (@sessionId, @fullPath, @fileName, @fileSize, @hash, @status)
                 ";
-                cmd.Parameters.AddWithValue("$sessionId", sessionId);
-                cmd.Parameters.AddWithValue("$fullPath", file.FullPath);
-                cmd.Parameters.AddWithValue("$fileName", file.FileName);
-                cmd.Parameters.AddWithValue("$fileSize", file.FileSize);
-                cmd.Parameters.AddWithValue("$hash", (object?)file.Hash ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("$status", file.Status.ToString());
+                cmd.Parameters.AddWithValue("@sessionId", sessionId);
+                cmd.Parameters.AddWithValue("@fullPath", file.FullPath);
+                cmd.Parameters.AddWithValue("@fileName", file.FileName);
+                cmd.Parameters.AddWithValue("@fileSize", file.FileSize);
+                cmd.Parameters.AddWithValue("@hash", (object?)file.Hash ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@status", file.Status.ToString());
                 await cmd.ExecuteNonQueryAsync();
             }
             transaction.Commit();
@@ -151,9 +151,9 @@ public class AppState : IAppState
 
         using var cmd = _connection.CreateCommand();
         cmd.CommandText = @"
-            UPDATE ScanSessions SET Status = 'Completed' WHERE Id = $sessionId
+            UPDATE ScanSessions SET Status = 'Completed' WHERE Id = @sessionId
         ";
-        cmd.Parameters.AddWithValue("$sessionId", sessionId);
+        cmd.Parameters.AddWithValue("@sessionId", sessionId);
         await cmd.ExecuteNonQueryAsync();
     }
 

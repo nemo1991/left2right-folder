@@ -18,19 +18,19 @@ public interface IHashCalculator
 /// </summary>
 public class HashCalculator : IHashCalculator
 {
+    private const int BufferSize = 1024 * 1024; // 1MB 缓冲区
+
     public async Task<string> ComputeHashAsync(string filePath, IProgress<double>? progress = null, CancellationToken ct = default)
     {
         return await Task.Run(() =>
         {
             using var md5 = System.Security.Cryptography.MD5.Create();
             using var stream = File.OpenRead(filePath);
-
-            var bufferSize = 1024 * 1024; // 1MB 缓冲区
-            var buffer = new byte[bufferSize];
+            var buffer = new byte[BufferSize];
             long totalRead = 0;
 
             int bytesRead;
-            while ((bytesRead = stream.Read(buffer, 0, bufferSize)) > 0)
+            while ((bytesRead = stream.Read(buffer, 0, BufferSize)) > 0)
             {
                 ct.ThrowIfCancellationRequested();
                 md5.TransformBlock(buffer, 0, bytesRead, null, 0);

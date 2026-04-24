@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -37,6 +38,9 @@ public class FileComparator : IFileComparator
             .GroupBy(f => f.FileName)
             .ToDictionary(g => g.Key, g => g.ToList());
 
+        // Hash 缓存 - 避免重复计算同一文件的 Hash
+        var hashCache = new ConcurrentDictionary<string, string>();
+
         var toDelete = new List<FileEntry>();
         var toMove = new List<FileEntry>();
 
@@ -59,7 +63,14 @@ public class FileComparator : IFileComparator
                     bool isDuplicate = false;
                     foreach (var target in sameSizeTargets)
                     {
-                        var targetHash = await hashCalculator.ComputeHashAsync(target.FullPath, null, ct);
+                        // 使用缓存避免重复计算
+                        string? targetHash;
+                        if (!hashCache.TryGetValue(target.FullPath, out targetHash))
+                        {
+                            targetHash = await hashCalculator.ComputeHashAsync(target.FullPath, null, ct);
+                            hashCache.TryAdd(target.FullPath, targetHash);
+                        }
+
                         if (sourceHash == targetHash)
                         {
                             isDuplicate = true;
