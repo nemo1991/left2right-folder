@@ -31,7 +31,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _statusMessage = "就绪";
     [ObservableProperty] private double _progressValue;
     [ObservableProperty] private bool _isProgressIndeterminate;
-    [ObservableProperty] private bool _canScan = true;
+    [ObservableProperty] private bool _canScan = false;
     [ObservableProperty] private bool _canMigrate;
     [ObservableProperty] private string _scanButtonContent = "扫描目录";
     [ObservableProperty] private string _migrateButtonContent = "开始迁移";
@@ -60,7 +60,10 @@ public partial class MainViewModel : ObservableObject
     partial void OnSourceDirectoryChanged(string value) => CanScan = !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(TargetDirectory);
     partial void OnTargetDirectoryChanged(string value) => CanScan = !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(SourceDirectory);
 
-    [RelayCommand(CanExecute = nameof(CanScan))]
+    private bool CanScanDirectories() => CanScan;
+    private bool CanMigrateCommand() => CanMigrate;
+
+    [RelayCommand(CanExecute = nameof(CanScanDirectories))]
     private async void ScanDirectoriesAsync()
     {
         if (string.IsNullOrEmpty(SourceDirectory) || string.IsNullOrEmpty(TargetDirectory))
@@ -141,7 +144,7 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanMigrate))]
+    [RelayCommand(CanExecute = nameof(CanScanDirectories))]
     private async void MigrateAsync()
     {
         if (_compareResult == null) return;
@@ -230,16 +233,14 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void BrowseSource()
     {
-        RequestFolderSelection?.Invoke(this, "source");
+        // 事件处理器直接在 MainWindow 中触发对话框
     }
 
     [RelayCommand]
     private void BrowseTarget()
     {
-        RequestFolderSelection?.Invoke(this, "target");
+        // 事件处理器直接在 MainWindow 中触发对话框
     }
-
-    public event EventHandler<string>? RequestFolderSelection;
 
     private void AddLog(string message, bool isError = false)
     {

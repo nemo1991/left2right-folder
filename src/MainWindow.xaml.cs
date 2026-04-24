@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Globalization;
+using System.Windows.Interop;
 using file_sync.Services;
 using file_sync.ViewModels;
 
@@ -37,14 +38,25 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = _viewModel;
 
-        // 订阅文件夹选择事件
-        _viewModel.RequestFolderSelection += OnRequestFolderSelection;
+        // 添加事件处理器
+        BrowseSourceButton.Click += BrowseSourceButton_Click;
+        BrowseTargetButton.Click += BrowseTargetButton_Click;
 
         // 添加 BoolToColorConverter 到资源
         Resources.Add("BoolToColorConverter", new BoolToColorConverter());
     }
 
-    private async void OnRequestFolderSelection(object? sender, string type)
+    private async void BrowseSourceButton_Click(object sender, RoutedEventArgs e)
+    {
+        await ShowFolderDialogAsync("source");
+    }
+
+    private async void BrowseTargetButton_Click(object sender, RoutedEventArgs e)
+    {
+        await ShowFolderDialogAsync("target");
+    }
+
+    private async Task ShowFolderDialogAsync(string type)
     {
         var dialog = new System.Windows.Forms.FolderBrowserDialog
         {
@@ -53,36 +65,42 @@ public partial class MainWindow : Window
             ShowNewFolderButton = false
         };
 
-        // 设置 owner 窗口句柄以确保正确的模态行为
-        var helper = new System.Windows.Interop.WindowInteropHelper(this);
-        var ownerHandle = helper.Handle;
+        var helper = new WindowInteropHelper(this);
+        var owner = new Win32Window(helper.Handle);
 
-        try
+        string? result = null;
+        await Task.Run(() =>
         {
-            var result = await Task.Run(() => dialog.ShowDialog());
-
-            if (result == System.Windows.Forms.DialogResult.OK)
+            if (dialog.ShowDialog(owner) == System.Windows.Forms.DialogResult.OK)
             {
-                if (type == "source")
-                {
-                    _viewModel.SourceDirectory = dialog.SelectedPath;
-                }
-                else
-                {
-                    _viewModel.TargetDirectory = dialog.SelectedPath;
-                }
+                result = dialog.SelectedPath;
+            }
+        });
+
+        if (result != null)
+        {
+            if (type == "source")
+            {
+                _viewModel.SourceDirectory = result;
+            }
+            else
+            {
+                _viewModel.TargetDirectory = result;
             }
         }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"选择目录失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
+    }
+
+    private class Win32Window : System.Windows.Forms.IWin32Window
+    {
+        public Win32Window(IntPtr handle) => Handle = handle;
+        public IntPtr Handle { get; }
     }
 
     protected override void OnClosed(EventArgs e)
     {
         base.OnClosed(e);
-        _viewModel.RequestFolderSelection -= OnRequestFolderSelection;
+        BrowseSourceButton.Click -= BrowseSourceButton_Click;
+        BrowseTargetButton.Click -= BrowseTargetButton_Click;
     }
 }
 

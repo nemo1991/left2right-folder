@@ -61,7 +61,7 @@
                     <TextBlock Grid.Column="0" Text="原目录:" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBox Grid.Column="1" Text="{Binding SourceDirectory, UpdateSourceTrigger=PropertyChanged}"
                              IsEnabled="False" Background="#FAFAFA"/>
-                    <Button Grid.Column="2" Content="浏览..." Command="{Binding BrowseSourceCommand}"
+                    <Button x:Name="BrowseSourceButton" Grid.Column="2" Content="浏览..."
                             Width="80" Margin="10,0,0,0"/>
                 </Grid>
 
@@ -75,7 +75,7 @@
                     <TextBlock Grid.Column="0" Text="目标目录:" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBox Grid.Column="1" Text="{Binding TargetDirectory, UpdateSourceTrigger=PropertyChanged}"
                              IsEnabled="False" Background="#FAFAFA"/>
-                    <Button Grid.Column="2" Content="浏览..." Command="{Binding BrowseTargetCommand}"
+                    <Button x:Name="BrowseTargetButton" Grid.Column="2" Content="浏览..."
                             Width="80" Margin="10,0,0,0"/>
                 </Grid>
             </Grid>
