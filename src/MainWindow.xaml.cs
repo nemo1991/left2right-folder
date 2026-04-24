@@ -43,9 +43,6 @@ public partial class MainWindow : Window
         BrowseTargetButton.Click += BrowseTargetButton_Click;
         ScanButton.Click += ScanButton_Click;
         MigrateButton.Click += MigrateButton_Click;
-
-        // 添加 BoolToColorConverter 到资源
-        Resources.Add("BoolToColorConverter", new BoolToColorConverter());
     }
 
     private async void BrowseSourceButton_Click(object sender, RoutedEventArgs e)
