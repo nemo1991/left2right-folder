@@ -26,12 +26,12 @@ public class CsvReportGenerator : IReportGenerator
             var sb = new StringBuilder();
 
             // 写入表头
-            sb.AppendLine("操作类型，源路径，目标路径，文件大小 (字节),Hash 值，状态，错误信息");
+            sb.AppendLine("操作类型，源路径，目标路径，文件大小 (字节),创建时间，Hash 值，状态，错误信息");
 
             // 写入详细记录
             foreach (var detail in report.Details)
             {
-                sb.AppendLine($"{EscapeCsv(detail.Operation)},{EscapeCsv(detail.SourcePath)},{EscapeCsv(detail.TargetPath)},{detail.FileSize},{detail.Hash},{EscapeCsv(detail.Status)},{EscapeCsv(detail.ErrorMessage)}");
+                sb.AppendLine($"{EscapeCsv(detail.Operation)},{EscapeCsv(detail.SourcePath)},{EscapeCsv(detail.TargetPath)},{detail.FileSize},{detail.CreatedTime:yyyy-MM-dd HH:mm:ss},{detail.Hash},{EscapeCsv(detail.Status)},{EscapeCsv(detail.ErrorMessage)}");
             }
 
             // 写入统计摘要

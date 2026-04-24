@@ -67,14 +67,14 @@ public class FileMigrator : IFileMigrator
                     File.Delete(file.FullPath);
                     deletedCount++;
                     details.Add(new MigrationDetail(
-                        "Delete", file.FullPath, "", file.FileSize, file.Hash, "Success", ""
+                        "Delete", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, "Success", ""
                     ));
                 }
                 else
                 {
                     skippedCount++;
                     details.Add(new MigrationDetail(
-                        "Delete", file.FullPath, "", file.FileSize, file.Hash, "Skipped", "文件不存在"
+                        "Delete", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, "Skipped", "文件不存在"
                     ));
                 }
             }
@@ -82,7 +82,7 @@ public class FileMigrator : IFileMigrator
             {
                 errorCount++;
                 details.Add(new MigrationDetail(
-                    "Delete", file.FullPath, "", file.FileSize, file.Hash, "Failed", ex.Message
+                    "Delete", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, "Failed", ex.Message
                 ));
             }
 
@@ -100,7 +100,7 @@ public class FileMigrator : IFileMigrator
                 {
                     skippedCount++;
                     details.Add(new MigrationDetail(
-                        "Move", file.FullPath, "", file.FileSize, file.Hash, "Skipped", "文件不存在"
+                        "Move", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, "Skipped", "文件不存在"
                     ));
                     continue;
                 }
@@ -130,14 +130,14 @@ public class FileMigrator : IFileMigrator
                 File.Move(file.FullPath, targetPath);
                 migratedCount++;
                 details.Add(new MigrationDetail(
-                    "Move", file.FullPath, targetPath, file.FileSize, file.Hash, "Success", ""
+                    "Move", file.FullPath, targetPath, file.FileSize, file.Hash, file.CreatedTime, "Success", ""
                 ));
             }
             catch (Exception ex)
             {
                 errorCount++;
                 details.Add(new MigrationDetail(
-                    "Move", file.FullPath, "", file.FileSize, file.Hash, "Failed", ex.Message
+                    "Move", file.FullPath, "", file.FileSize, file.Hash, file.CreatedTime, "Failed", ex.Message
                 ));
             }
 

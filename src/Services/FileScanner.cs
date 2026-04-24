@@ -54,7 +54,8 @@ public class FileScanner : IFileScanner
                         filePath,
                         info.Name,
                         info.Length,
-                        info.LastWriteTime
+                        info.LastWriteTime,
+                        info.CreationTime
                     ));
 
                     progress?.Report(filePath);

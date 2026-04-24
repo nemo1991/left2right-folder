@@ -10,6 +10,7 @@ public record FileEntry(
     string FileName,
     long FileSize,
     System.DateTime LastModified,
+    System.DateTime CreatedTime,
     string Hash = "",
     FileStatus Status = FileStatus.Pending
 );
@@ -63,6 +64,7 @@ public record MigrationDetail(
     string TargetPath,
     long FileSize,
     string Hash,
+    System.DateTime CreatedTime,
     string Status,        // Success / Failed / Skipped
     string ErrorMessage
 );
