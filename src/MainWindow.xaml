@@ -62,7 +62,7 @@
                     <TextBox Grid.Column="1" Text="{Binding SourceDirectory, UpdateSourceTrigger=PropertyChanged}"
                              IsEnabled="False" Background="#FAFAFA"/>
                     <Button Grid.Column="2" Content="浏览..." Command="{Binding BrowseSourceCommand}"
-                            Width="80" Margin="10,0,0,0" IsEnabled="{Binding CanScan, Mode=OneWay}"/>
+                            Width="80" Margin="10,0,0,0"/>
                 </Grid>
 
                 <!-- 目标目录 -->
@@ -76,7 +76,7 @@
                     <TextBox Grid.Column="1" Text="{Binding TargetDirectory, UpdateSourceTrigger=PropertyChanged}"
                              IsEnabled="False" Background="#FAFAFA"/>
                     <Button Grid.Column="2" Content="浏览..." Command="{Binding BrowseTargetCommand}"
-                            Width="80" Margin="10,0,0,0" IsEnabled="{Binding CanScan, Mode=OneWay}"/>
+                            Width="80" Margin="10,0,0,0"/>
                 </Grid>
             </Grid>
         </GroupBox>
