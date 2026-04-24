@@ -1,43 +1,23 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Data;
-using System.Windows.Media;
-using System.Globalization;
 using System.Windows.Interop;
-using file_sync.Services;
 using file_sync.ViewModels;
 
 namespace file_sync;
 
-public partial class MainWindow : Window
+public partial class YearFilterMigrationWindow : Window
 {
-    private readonly MainViewModel _viewModel;
+    private readonly YearFilterMigrationViewModel _viewModel;
 
-    public MainWindow()
+    public YearFilterMigrationWindow()
     {
-        // 初始化依赖注入
-        var fileScanner = new FileScanner();
-        var hashCalculator = new HashCalculator();
-        var fileComparator = new FileComparator();
-        var fileMigrator = new FileMigrator();
-        var reportGenerator = new CsvReportGenerator();
-        var appState = new AppState();
-
-        // 初始化 AppState
-        _ = appState.InitializeAsync();
-
-        _viewModel = new MainViewModel(
-            fileScanner,
-            hashCalculator,
-            fileComparator,
-            fileMigrator,
-            reportGenerator,
-            appState);
-
         InitializeComponent();
+
+        _viewModel = new YearFilterMigrationViewModel();
         DataContext = _viewModel;
 
         // 添加事件处理器
@@ -46,14 +26,42 @@ public partial class MainWindow : Window
         ScanButton.Click += ScanButton_Click;
         MigrateButton.Click += MigrateButton_Click;
         CancelButton.Click += CancelButton_Click;
+        BackButton.Click += BackButton_Click;
+
+        // 年份列表选择
+        YearListBox.SelectionChanged += YearListBox_SelectionChanged;
 
         // 日志自动滚动
         SubscribeToLogCollection();
     }
 
-    private void BackButton_Click(object sender, RoutedEventArgs e)
+    private void YearDropdownButton_Click(object sender, RoutedEventArgs e)
     {
-        Close();
+        if (YearDropdownPopup.IsOpen)
+        {
+            YearDropdownPopup.IsOpen = false;
+            return;
+        }
+
+        var currentYear = DateTime.Now.Year;
+        var startYear = _viewModel.IsYearValid ? _viewModel.ParsedYear : currentYear;
+        var years = new List<YearItem>();
+        for (int y = startYear + 10; y >= startYear - 30; y--)
+        {
+            years.Add(new YearItem { Year = y, YearText = y.ToString() });
+        }
+        YearListBox.ItemsSource = years;
+        YearListBox.SelectedValue = startYear;
+        YearDropdownPopup.IsOpen = true;
+    }
+
+    private void YearListBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (YearListBox.SelectedItem is YearItem item)
+        {
+            YearTextBox.Text = item.YearText;
+            YearDropdownPopup.IsOpen = false;
+        }
     }
 
     private void SubscribeToLogCollection()
@@ -64,7 +72,6 @@ public partial class MainWindow : Window
             {
                 if (e.Action == NotifyCollectionChangedAction.Add && LogListBox.Items.Count > 0)
                 {
-                    // 使用 BeginInvoke 延迟滚动，避免在 CollectionChanged 事件期间操作 ListBox
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
                         if (LogListBox.Items.Count > 0)
@@ -89,7 +96,7 @@ public partial class MainWindow : Window
 
     private async void ScanButton_Click(object sender, RoutedEventArgs e)
     {
-        await _viewModel.ScanDirectoriesAsync();
+        await _viewModel.ScanAsync();
     }
 
     private async void MigrateButton_Click(object sender, RoutedEventArgs e)
@@ -102,13 +109,18 @@ public partial class MainWindow : Window
         _viewModel.Cancel();
     }
 
+    private void BackButton_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
     private async Task ShowFolderDialogAsync(string type)
     {
         var dialog = new System.Windows.Forms.FolderBrowserDialog
         {
-            Description = type == "source" ? "选择原目录" : "选择目标目录",
+            Description = type == "source" ? "选择源目录" : "选择目标目录",
             UseDescriptionForTitle = true,
-            ShowNewFolderButton = false
+            ShowNewFolderButton = true
         };
 
         var helper = new WindowInteropHelper(this);
@@ -149,29 +161,14 @@ public partial class MainWindow : Window
         BrowseTargetButton.Click -= BrowseTargetButton_Click;
         ScanButton.Click -= ScanButton_Click;
         MigrateButton.Click -= MigrateButton_Click;
+        CancelButton.Click -= CancelButton_Click;
         BackButton.Click -= BackButton_Click;
-
-        // 清理日志集合订阅
-        if (_viewModel.Logs is ObservableCollection<LogEntry> collection)
-        {
-            collection.CollectionChanged -= (s, ev) => { };
-        }
+        YearListBox.SelectionChanged -= YearListBox_SelectionChanged;
     }
 }
 
-public class BoolToColorConverter : IValueConverter
+public class YearItem
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        if (value is bool isError && isError)
-        {
-            return new SolidColorBrush(Colors.Red);
-        }
-        return new SolidColorBrush(Colors.Black);
-    }
-
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        throw new NotImplementedException();
-    }
+    public int Year { get; set; }
+    public string YearText { get; set; } = "";
 }
