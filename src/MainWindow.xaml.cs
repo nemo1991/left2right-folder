@@ -41,6 +41,8 @@ public partial class MainWindow : Window
         // 添加事件处理器
         BrowseSourceButton.Click += BrowseSourceButton_Click;
         BrowseTargetButton.Click += BrowseTargetButton_Click;
+        ScanButton.Click += ScanButton_Click;
+        MigrateButton.Click += MigrateButton_Click;
 
         // 添加 BoolToColorConverter 到资源
         Resources.Add("BoolToColorConverter", new BoolToColorConverter());
@@ -54,6 +56,16 @@ public partial class MainWindow : Window
     private async void BrowseTargetButton_Click(object sender, RoutedEventArgs e)
     {
         await ShowFolderDialogAsync("target");
+    }
+
+    private async void ScanButton_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.ScanDirectoriesAsync();
+    }
+
+    private async void MigrateButton_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.MigrateAsync();
     }
 
     private async Task ShowFolderDialogAsync(string type)
@@ -101,6 +113,8 @@ public partial class MainWindow : Window
         base.OnClosed(e);
         BrowseSourceButton.Click -= BrowseSourceButton_Click;
         BrowseTargetButton.Click -= BrowseTargetButton_Click;
+        ScanButton.Click -= ScanButton_Click;
+        MigrateButton.Click -= MigrateButton_Click;
     }
 }
 

@@ -106,12 +106,10 @@
                 </Border>
             </StackPanel>
 
-            <Button Grid.Column="1" Content="{Binding ScanButtonContent, Mode=OneWay}"
-                    Command="{Binding ScanDirectoriesCommand}" Width="120" Margin="0,0,10,0"
-                    IsEnabled="{Binding CanScan, Mode=OneWay}"/>
-            <Button Grid.Column="2" Content="{Binding MigrateButtonContent, Mode=OneWay}"
-                    Command="{Binding MigrateCommand}" Width="120" Margin="0,0,10,0"
-                    IsEnabled="{Binding CanMigrate, Mode=OneWay}"/>
+            <Button x:Name="ScanButton" Grid.Column="1" Content="{Binding ScanButtonContent, Mode=OneWay}"
+                    Width="120" Margin="0,0,10,0" IsEnabled="{Binding CanScan, Mode=OneWay}"/>
+            <Button x:Name="MigrateButton" Grid.Column="2" Content="{Binding MigrateButtonContent, Mode=OneWay}"
+                    Width="120" Margin="0,0,10,0" IsEnabled="{Binding CanMigrate, Mode=OneWay}"/>
             <Button Grid.Column="3" Content="取消" Command="{Binding CancelCommand}"
                     Width="80" IsCancel="True"/>
         </Grid>

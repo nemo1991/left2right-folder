@@ -57,14 +57,16 @@ public partial class MainViewModel : ObservableObject
         _appState = appState;
     }
 
-    partial void OnSourceDirectoryChanged(string value) => CanScan = !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(TargetDirectory);
-    partial void OnTargetDirectoryChanged(string value) => CanScan = !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(SourceDirectory);
+    partial void OnSourceDirectoryChanged(string value)
+    {
+        CanScan = !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(TargetDirectory);
+    }
+    partial void OnTargetDirectoryChanged(string value)
+    {
+        CanScan = !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(SourceDirectory);
+    }
 
-    private bool CanScanDirectories() => CanScan;
-    private bool CanMigrateCommand() => CanMigrate;
-
-    [RelayCommand(CanExecute = nameof(CanScanDirectories))]
-    private async void ScanDirectoriesAsync()
+    public async Task ScanDirectoriesAsync()
     {
         if (string.IsNullOrEmpty(SourceDirectory) || string.IsNullOrEmpty(TargetDirectory))
             return;
@@ -144,8 +146,7 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanScanDirectories))]
-    private async void MigrateAsync()
+    public async Task MigrateAsync()
     {
         if (_compareResult == null) return;
 
@@ -228,18 +229,6 @@ public partial class MainViewModel : ObservableObject
     {
         _cts?.Cancel();
         StatusMessage = "正在取消...";
-    }
-
-    [RelayCommand]
-    private void BrowseSource()
-    {
-        // 事件处理器直接在 MainWindow 中触发对话框
-    }
-
-    [RelayCommand]
-    private void BrowseTarget()
-    {
-        // 事件处理器直接在 MainWindow 中触发对话框
     }
 
     private void AddLog(string message, bool isError = false)
