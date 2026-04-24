@@ -45,6 +45,8 @@ dotnet run
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ../publish
 ```
 
+**注意**：源码目录为 `src/`，请在 `src/` 目录下执行上述命令。
+
 ## 使用说明
 
 1. **选择目录** - 点击"浏览"按钮分别选择原目录和目标目录

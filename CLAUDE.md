@@ -50,7 +50,7 @@ dotnet build
 dotnet run
 
 # 发布
-dotnet publish -c Release -r win-x64
+dotnet publish -c Release -r win-x64 -o ../publish
 ```
 
 ## 核心流程
