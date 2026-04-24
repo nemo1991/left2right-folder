@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -43,7 +44,7 @@ public partial class MainWindow : Window
         Resources.Add("BoolToColorConverter", new BoolToColorConverter());
     }
 
-    private void OnRequestFolderSelection(object? sender, string type)
+    private async void OnRequestFolderSelection(object? sender, string type)
     {
         var dialog = new System.Windows.Forms.FolderBrowserDialog
         {
@@ -52,16 +53,29 @@ public partial class MainWindow : Window
             ShowNewFolderButton = false
         };
 
-        if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+        // 设置 owner 窗口句柄以确保正确的模态行为
+        var helper = new System.Windows.Interop.WindowInteropHelper(this);
+        var ownerHandle = helper.Handle;
+
+        try
         {
-            if (type == "source")
+            var result = await Task.Run(() => dialog.ShowDialog());
+
+            if (result == System.Windows.Forms.DialogResult.OK)
             {
-                _viewModel.SourceDirectory = dialog.SelectedPath;
+                if (type == "source")
+                {
+                    _viewModel.SourceDirectory = dialog.SelectedPath;
+                }
+                else
+                {
+                    _viewModel.TargetDirectory = dialog.SelectedPath;
+                }
             }
-            else
-            {
-                _viewModel.TargetDirectory = dialog.SelectedPath;
-            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"选择目录失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
