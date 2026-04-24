@@ -65,9 +65,18 @@
                                FontSize="13" Foreground="#666666" Margin="0,6,0,0" TextWrapping="Wrap"/>
                 </StackPanel>
             </Button>
+
+            <Button x:Name="ObjectStorageSyncButton" Style="{StaticResource FeatureButton}"
+                    Click="ObjectStorageSyncButton_Click" HorizontalAlignment="Stretch">
+                <StackPanel>
+                    <TextBlock Text="同步到对象存储" FontWeight="Bold" FontSize="18"/>
+                    <TextBlock Text="将本地文件同步到 S3/OSS/COS 兼容的对象存储服务"
+                               FontSize="13" Foreground="#666666" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Button>
         </StackPanel>
 
         <!-- 底部 -->
-        <TextBlock Grid.Row="2" Text="版本 1.0" Foreground="#999999" FontSize="12" HorizontalAlignment="Center"/>
+        <TextBlock Grid.Row="2" Text="版本 1.2.0" Foreground="#999999" FontSize="12" HorizontalAlignment="Center"/>
     </Grid>
 </Window>

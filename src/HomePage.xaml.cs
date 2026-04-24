@@ -28,4 +28,14 @@ public partial class HomePage : Window
         };
         yearFilterWindow.ShowDialog();
     }
+
+    private void ObjectStorageSyncButton_Click(object sender, RoutedEventArgs e)
+    {
+        var syncWindow = new ObjectStorageSyncWindow
+        {
+            Owner = this,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        syncWindow.ShowDialog();
+    }
 }
