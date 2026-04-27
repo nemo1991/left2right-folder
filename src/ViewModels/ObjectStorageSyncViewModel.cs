@@ -112,6 +112,8 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
             return;
         }
 
+        _cts?.Cancel();
+        _cts?.Dispose();
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
 
@@ -143,7 +145,6 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
             {
                 ct.ThrowIfCancellationRequested();
                 listResponse = await client.ListObjectsV2Async(listRequest, ct);
-                remoteFiles.TrimExcess();
 
                 foreach (var obj in listResponse.S3Objects)
                 {
@@ -177,8 +178,8 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
 
                     if (!remoteFiles.ContainsKey(objectKey))
                     {
-                        // 文件不存在于远程
-                        needSync = SyncMode != 0 || true; // 模式0=仅上传新增,也上传
+                        // 文件不存在于远程，需要上传
+                        needSync = true;
                     }
                     else
                     {
@@ -252,6 +253,8 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
         if (result != MessageBoxResult.OK)
             return;
 
+        _cts?.Cancel();
+        _cts?.Dispose();
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
 
@@ -279,7 +282,7 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
                 var file = _filesToSync[i];
                 try
                 {
-                    if (!File.Exists(file.LocalPath))
+                    if (!await Task.Run(() => File.Exists(file.LocalPath)))
                     {
                         _syncRecords.Add(new SyncRecord(file.LocalPath, file.ObjectKey, 0, "跳过", "文件不存在"));
                         errorCount++;
@@ -303,7 +306,7 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
                     // 如果选择"上传后删除"模式
                     if (SyncMode == 2)
                     {
-                        File.Delete(file.LocalPath);
+                        await Task.Run(() => File.Delete(file.LocalPath));
                         deletedCount++;
                         AddLog($"已删除本地文件：{Path.GetFileName(file.LocalPath)}");
                     }
@@ -333,7 +336,7 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
             AddLog($"同步完成！已上传：{uploadedCount}，已删除：{deletedCount}，错误：{errorCount}");
 
             // 生成同步报告
-            var reportPath = GenerateReportCsv(uploadedCount, deletedCount, errorCount, total);
+            var reportPath = await GenerateReportCsv(uploadedCount, deletedCount, errorCount, total);
             if (!string.IsNullOrEmpty(reportPath))
             {
                 AddLog($"同步报告已保存：{reportPath}");
@@ -390,7 +393,7 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
         return unitIndex == 0 ? $"{size:F0} {units[unitIndex]}" : $"{size:F2} {units[unitIndex]}";
     }
 
-    private string? GenerateReportCsv(int uploadedCount, int deletedCount, int errorCount, int total)
+    private async Task<string?> GenerateReportCsv(int uploadedCount, int deletedCount, int errorCount, int total)
     {
         try
         {
@@ -428,7 +431,7 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
             sb.AppendLine($"已删除：{deletedCount}");
             sb.AppendLine($"错误：{errorCount}");
 
-            File.WriteAllText(dialog.FileName, sb.ToString(), new UTF8Encoding(true));
+            await Task.Run(() => File.WriteAllText(dialog.FileName, sb.ToString(), new UTF8Encoding(true)));
             return dialog.FileName;
         }
         catch (Exception ex)
