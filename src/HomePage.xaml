@@ -74,6 +74,15 @@
                                FontSize="13" Foreground="#666666" Margin="0,6,0,0" TextWrapping="Wrap"/>
                 </StackPanel>
             </Button>
+
+            <Button x:Name="S3DownloadButton" Style="{StaticResource FeatureButton}"
+                    Click="S3DownloadButton_Click" HorizontalAlignment="Stretch">
+                <StackPanel>
+                    <TextBlock Text="从对象存储下载" FontWeight="Bold" FontSize="18"/>
+                    <TextBlock Text="从 S3/OSS/COS 兼容的对象存储服务下载文件，支持通配符匹配"
+                               FontSize="13" Foreground="#666666" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Button>
         </StackPanel>
 
         <!-- 底部 -->

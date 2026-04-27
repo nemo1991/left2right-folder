@@ -38,4 +38,14 @@ public partial class HomePage : Window
         };
         syncWindow.ShowDialog();
     }
+
+    private void S3DownloadButton_Click(object sender, RoutedEventArgs e)
+    {
+        var downloadWindow = new S3DownloadWindow
+        {
+            Owner = this,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        downloadWindow.ShowDialog();
+    }
 }
