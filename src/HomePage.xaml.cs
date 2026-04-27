@@ -1,8 +1,9 @@
 using System.Windows;
+using HandyControl.Controls;
 
 namespace file_sync;
 
-public partial class HomePage : Window
+public partial class HomePage : HandyControl.Controls.Window
 {
     public HomePage()
     {
