@@ -3,35 +3,18 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="文件管理工具" Height="500" Width="600"
+        Title="文件管理工具" Height="600" Width="800"
         WindowStartupLocation="CenterScreen"
-        Background="#F5F5F5"
+        Background="{DynamicResource MaterialDesign.Brush.Background}"
+        TextElement.Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="14"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="Auto"
+        FontFamily="{DynamicResource MaterialDesignFont}"
         Icon="icon.ico">
-
-    <Window.Resources>
-        <Style x:Key="FeatureButton" TargetType="Button">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="Foreground" Value="#333333"/>
-            <Setter Property="Padding" Value="24,20"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#E0E0E0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="Margin" Value="0,0,0,12"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#F0F7FF"/>
-                    <Setter Property="BorderBrush" Value="#0078D4"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#F5F5F5"/>
-                    <Setter Property="Foreground" Value="#CCCCCC"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-    </Window.Resources>
 
     <Grid Margin="40">
         <Grid.RowDefinitions>
@@ -41,51 +24,86 @@
         </Grid.RowDefinitions>
 
         <!-- 标题 -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,30">
-            <TextBlock Text="文件管理工具" FontSize="28" FontWeight="Bold" Foreground="#333333" Margin="0,0,0,8"/>
-            <TextBlock Text="选择要使用的功能" FontSize="14" Foreground="#666666"/>
+        <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,40">
+            <materialDesign:PackIcon Kind="FolderMultiple" Width="64" Height="64" HorizontalAlignment="Center"
+                                     Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+            <TextBlock Text="文件管理工具" FontSize="32" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,16,0,8"
+                       Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+            <TextBlock Text="选择要使用的功能" FontSize="14" HorizontalAlignment="Center"
+                       Foreground="{DynamicResource MaterialDesign.Brush.Foreground.Light}"/>
         </StackPanel>
 
-        <!-- 功能列表 -->
-        <StackPanel Grid.Row="1">
-            <Button x:Name="FileMigrationButton" Style="{StaticResource FeatureButton}"
-                    Click="FileMigrationButton_Click" HorizontalAlignment="Stretch">
-                <StackPanel>
-                    <TextBlock Text="文件迁移" FontWeight="Bold" FontSize="18"/>
-                    <TextBlock Text="对比两个目录，将相同文件删除、不同文件移动到目标目录"
-                               FontSize="13" Foreground="#666666" Margin="0,6,0,0" TextWrapping="Wrap"/>
-                </StackPanel>
-            </Button>
+        <!-- 功能列表 - 使用 UniformGrid 实现卡片式布局 -->
+        <UniformGrid Grid.Row="1" Columns="2" Rows="2" Margin="20">
+            <!-- 文件迁移 -->
+            <materialDesign:Card Margin="10" Padding="20" UniformCornerRadius="16"
+                                 materialDesign:ElevationAssist.Elevation="Dp4">
+                <Button Style="{StaticResource MaterialDesignFlatButton}"
+                        Click="FileMigrationButton_Click" HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left" Height="Auto" Padding="0">
+                    <StackPanel>
+                        <materialDesign:PackIcon Kind="FileCompare" Width="48" Height="48"
+                                                 Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,16"/>
+                        <TextBlock Text="文件迁移" FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <TextBlock Text="对比两个目录，将相同文件删除、不同文件移动到目标目录"
+                                   FontSize="12" TextWrapping="Wrap" Opacity="0.7"/>
+                    </StackPanel>
+                </Button>
+            </materialDesign:Card>
 
-            <Button x:Name="YearFilterButton" Style="{StaticResource FeatureButton}"
-                    Click="YearFilterButton_Click" HorizontalAlignment="Stretch">
-                <StackPanel>
-                    <TextBlock Text="按年份迁移文件" FontWeight="Bold" FontSize="18"/>
-                    <TextBlock Text="按修改年份筛选文件，批量移动到目标目录中对应的年份子目录"
-                               FontSize="13" Foreground="#666666" Margin="0,6,0,0" TextWrapping="Wrap"/>
-                </StackPanel>
-            </Button>
+            <!-- 按年份迁移 -->
+            <materialDesign:Card Margin="10" Padding="20" UniformCornerRadius="16"
+                                 materialDesign:ElevationAssist.Elevation="Dp4">
+                <Button Style="{StaticResource MaterialDesignFlatButton}"
+                        Click="YearFilterButton_Click" HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left" Height="Auto" Padding="0">
+                    <StackPanel>
+                        <materialDesign:PackIcon Kind="CalendarClock" Width="48" Height="48"
+                                                 Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,16"/>
+                        <TextBlock Text="按年份迁移" FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <TextBlock Text="按修改年份筛选文件，批量移动到目标目录的年份子目录"
+                                   FontSize="12" TextWrapping="Wrap" Opacity="0.7"/>
+                    </StackPanel>
+                </Button>
+            </materialDesign:Card>
 
-            <Button x:Name="ObjectStorageSyncButton" Style="{StaticResource FeatureButton}"
-                    Click="ObjectStorageSyncButton_Click" HorizontalAlignment="Stretch">
-                <StackPanel>
-                    <TextBlock Text="同步到对象存储" FontWeight="Bold" FontSize="18"/>
-                    <TextBlock Text="将本地文件同步到 S3/OSS/COS 兼容的对象存储服务"
-                               FontSize="13" Foreground="#666666" Margin="0,6,0,0" TextWrapping="Wrap"/>
-                </StackPanel>
-            </Button>
+            <!-- 同步到对象存储 -->
+            <materialDesign:Card Margin="10" Padding="20" UniformCornerRadius="16"
+                                 materialDesign:ElevationAssist.Elevation="Dp4">
+                <Button Style="{StaticResource MaterialDesignFlatButton}"
+                        Click="ObjectStorageSyncButton_Click" HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left" Height="Auto" Padding="0">
+                    <StackPanel>
+                        <materialDesign:PackIcon Kind="CloudUpload" Width="48" Height="48"
+                                                 Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,16"/>
+                        <TextBlock Text="同步到对象存储" FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <TextBlock Text="将本地文件同步到 S3/OSS/COS 兼容的对象存储服务"
+                                   FontSize="12" TextWrapping="Wrap" Opacity="0.7"/>
+                    </StackPanel>
+                </Button>
+            </materialDesign:Card>
 
-            <Button x:Name="S3DownloadButton" Style="{StaticResource FeatureButton}"
-                    Click="S3DownloadButton_Click" HorizontalAlignment="Stretch">
-                <StackPanel>
-                    <TextBlock Text="从对象存储下载" FontWeight="Bold" FontSize="18"/>
-                    <TextBlock Text="从 S3/OSS/COS 兼容的对象存储服务下载文件，支持通配符匹配"
-                               FontSize="13" Foreground="#666666" Margin="0,6,0,0" TextWrapping="Wrap"/>
-                </StackPanel>
-            </Button>
-        </StackPanel>
+            <!-- 从对象存储下载 -->
+            <materialDesign:Card Margin="10" Padding="20" UniformCornerRadius="16"
+                                 materialDesign:ElevationAssist.Elevation="Dp4">
+                <Button Style="{StaticResource MaterialDesignFlatButton}"
+                        Click="S3DownloadButton_Click" HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left" Height="Auto" Padding="0">
+                    <StackPanel>
+                        <materialDesign:PackIcon Kind="CloudDownload" Width="48" Height="48"
+                                                 Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,16"/>
+                        <TextBlock Text="从对象存储下载" FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <TextBlock Text="从 S3/OSS/COS 兼容的对象存储服务下载文件，支持通配符匹配"
+                                   FontSize="12" TextWrapping="Wrap" Opacity="0.7"/>
+                    </StackPanel>
+                </Button>
+            </materialDesign:Card>
+        </UniformGrid>
 
         <!-- 底部 -->
-        <TextBlock Grid.Row="2" Text="版本 1.2.0" Foreground="#999999" FontSize="12" HorizontalAlignment="Center"/>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+            <materialDesign:PackIcon Kind="Github" VerticalAlignment="Center" Margin="0,0,8,0" Opacity="0.5"/>
+            <TextBlock Text="版本 1.2.0" FontSize="12" Opacity="0.5" VerticalAlignment="Center"/>
+        </StackPanel>
     </Grid>
 </Window>
