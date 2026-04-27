@@ -35,7 +35,7 @@ public class ObjectStorageSyncViewModelTests : IDisposable
             .GetMethod("FormatSize", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         Assert.NotNull(method);
 
-        var result = (string)method.Invoke(null, new object[] { bytes });
+        var result = (string?)method.Invoke(null, new object[] { bytes })!;
         Assert.Equal(expected, result);
     }
 
@@ -52,7 +52,7 @@ public class ObjectStorageSyncViewModelTests : IDisposable
             .GetMethod("EscapeCsv", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         Assert.NotNull(method);
 
-        var result = (string)method.Invoke(null, new object[] { input });
+        var result = (string?)method.Invoke(null, new object[] { input })!;
         Assert.Equal(expected, result);
     }
 
@@ -70,7 +70,7 @@ public class ObjectStorageSyncViewModelTests : IDisposable
             .GetMethod("BuildObjectKey", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         Assert.NotNull(method);
 
-        var result = (string)method.Invoke(vm, new object[] { filePath });
+        var result = (string?)method.Invoke(vm, new object[] { filePath })!;
         Assert.Equal("subdir/test.txt", result);
     }
 
@@ -87,7 +87,7 @@ public class ObjectStorageSyncViewModelTests : IDisposable
             .GetMethod("BuildObjectKey", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         Assert.NotNull(method);
 
-        var result = (string)method.Invoke(vm, new object[] { filePath });
+        var result = (string?)method.Invoke(vm, new object[] { filePath })!;
         Assert.Equal("backup/test.txt", result);
     }
 
@@ -104,7 +104,7 @@ public class ObjectStorageSyncViewModelTests : IDisposable
             .GetMethod("BuildObjectKey", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         Assert.NotNull(method);
 
-        var result = (string)method.Invoke(vm, new object[] { filePath });
+        var result = (string?)method.Invoke(vm, new object[] { filePath })!;
         Assert.Equal("backup/folder/test.txt", result);
     }
 
@@ -123,7 +123,7 @@ public class ObjectStorageSyncViewModelTests : IDisposable
             .GetMethod("BuildObjectKey", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         Assert.NotNull(method);
 
-        var result = (string)method.Invoke(vm, new object[] { filePath });
+        var result = (string?)method.Invoke(vm, new object[] { filePath })!;
         Assert.Contains("/", result);
         Assert.DoesNotContain("\\", result);
     }
