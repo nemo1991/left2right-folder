@@ -6,7 +6,7 @@
         xmlns:vm="clr-namespace:file_sync.ViewModels"
         xmlns:local="clr-namespace:file_sync"
         mc:Ignorable="d"
-        Title="按年份迁移文件" Height="600" Width="900"
+        Title="按年份迁移文件" Height="680" Width="900"
         WindowStartupLocation="CenterOwner"
         Background="#F5F5F5"
         Icon="icon.ico">
