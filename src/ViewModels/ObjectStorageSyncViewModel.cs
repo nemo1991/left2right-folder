@@ -45,6 +45,15 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
     [ObservableProperty] private Visibility _totalSizeVisibility = Visibility.Collapsed;
     [ObservableProperty] private ObservableCollection<LogEntry> _logs = new();
 
+    // 下载相关
+    [ObservableProperty] private string _downloadPrefix = "";
+    [ObservableProperty] private string _wildcardPattern = "";
+    [ObservableProperty] private bool _canDownload = false;
+    [ObservableProperty] private int _toDownloadCount;
+    private readonly List<DownloadRecord> _filesToDownload = new();
+    private readonly List<SyncRecord> _downloadRecords = new();
+    private record DownloadRecord(string ObjectKey, long Size);
+
     partial void OnLocalDirectoryChanged(string value)
     {
         ResetState();
@@ -55,6 +64,8 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
     partial void OnAccessKeyChanged(string value) => UpdateCanScan();
     partial void OnSecretKeyChanged(string value) => UpdateCanScan();
     partial void OnBucketChanged(string value) => UpdateCanScan();
+    partial void OnDownloadPrefixChanged(string value) => UpdateCanDownload();
+    partial void OnWildcardPatternChanged(string value) => UpdateCanDownload();
 
     private void UpdateCanScan()
     {
@@ -63,6 +74,16 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
                   !string.IsNullOrEmpty(AccessKey) &&
                   !string.IsNullOrEmpty(SecretKey) &&
                   !string.IsNullOrEmpty(Bucket);
+    }
+
+    private void UpdateCanDownload()
+    {
+        CanDownload = !string.IsNullOrEmpty(LocalDirectory) &&
+                     !string.IsNullOrEmpty(Endpoint) &&
+                     !string.IsNullOrEmpty(AccessKey) &&
+                     !string.IsNullOrEmpty(SecretKey) &&
+                     !string.IsNullOrEmpty(Bucket) &&
+                     !string.IsNullOrEmpty(WildcardPattern);
     }
 
     private void ResetState()
@@ -237,6 +258,278 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
             CanCancel = false;
             IsProgressIndeterminate = false;
             AddLog($"错误：{ex.Message}", true);
+        }
+    }
+
+    public async Task ListRemoteFilesAsync()
+    {
+        if (!CanDownload)
+        {
+            AddLog("错误：请完善存储配置和通配符", true);
+            return;
+        }
+
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        var ct = _cts.Token;
+
+        try
+        {
+            CanScan = false;
+            CanSync = false;
+            CanDownload = false;
+            CanCancel = true;
+            IsProgressIndeterminate = true;
+            StatusMessage = "正在列出远程文件...";
+            Logs.Clear();
+            _filesToDownload.Clear();
+
+            using var client = CreateClient();
+
+            // 构建搜索前缀和模式
+            var searchPrefix = string.IsNullOrEmpty(DownloadPrefix) ? null : DownloadPrefix.TrimEnd('/') + "/";
+            var pattern = WildcardPattern;
+
+            // 将通配符转换为正则表达式
+            var regexPattern = "^" + System.Text.RegularExpressions.Regex.Escape(pattern)
+                .Replace("\\*", ".*")
+                .Replace("\\?", ".") + "$";
+
+            AddLog($"搜索前缀: {(searchPrefix ?? "(根目录)")}");
+            AddLog($"匹配模式: {pattern}");
+
+            var matchingFiles = new List<S3Object>();
+
+            // 分页获取文件列表
+            var listRequest = new ListObjectsV2Request
+            {
+                BucketName = Bucket,
+                Prefix = searchPrefix
+            };
+
+            ListObjectsV2Response listResponse;
+            do
+            {
+                ct.ThrowIfCancellationRequested();
+                listResponse = await client.ListObjectsV2Async(listRequest, ct);
+
+                foreach (var obj in listResponse.S3Objects)
+                {
+                    // 获取文件名（不含前缀）
+                    var key = obj.Key;
+                    if (!string.IsNullOrEmpty(searchPrefix) && key.StartsWith(searchPrefix))
+                    {
+                        key = key.Substring(searchPrefix.Length);
+                    }
+
+                    // 检查通配符匹配
+                    if (System.Text.RegularExpressions.Regex.IsMatch(key, regexPattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                    {
+                        matchingFiles.Add(obj);
+                        _filesToDownload.Add(new DownloadRecord(obj.Key, obj.Size));
+                    }
+                }
+
+                listRequest.ContinuationToken = listResponse.NextContinuationToken;
+            } while (listResponse.IsTruncated);
+
+            ToDownloadCount = matchingFiles.Count;
+            long totalSize = matchingFiles.Sum(f => f.Size);
+
+            StatusMessage = $"找到 {ToDownloadCount} 个匹配的文件";
+            CanDownload = true;
+            CanCancel = false;
+            IsProgressIndeterminate = false;
+            ProgressValue = 100;
+
+            AddLog($"列出完成 - 共找到 {ToDownloadCount} 个匹配文件，总大小 {FormatSize(totalSize)}");
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "已取消列出";
+            CanCancel = false;
+            IsProgressIndeterminate = false;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"列出失败：{ex.Message}";
+            AddLog($"错误：{ex.Message}", true);
+        }
+        finally
+        {
+            CanDownload = _filesToDownload.Count > 0;
+            CanScan = true;
+            CanCancel = false;
+        }
+    }
+
+    public async Task DownloadAsync()
+    {
+        if (_filesToDownload.Count == 0)
+        {
+            AddLog("没有可下载的文件，请先点击&quot;列出文件&quot;", true);
+            return;
+        }
+
+        if (!Directory.Exists(LocalDirectory))
+        {
+            AddLog($"错误：本地目录不存在：{LocalDirectory}", true);
+            return;
+        }
+
+        var result = MessageBox.Show(
+            $"确认下载 {_filesToDownload.Count} 个文件到本地目录 {LocalDirectory}？",
+            "确认下载",
+            MessageBoxButton.OKCancel,
+            MessageBoxImage.Question);
+
+        if (result != MessageBoxResult.OK)
+            return;
+
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        var ct = _cts.Token;
+
+        try
+        {
+            CanScan = false;
+            CanSync = false;
+            CanDownload = false;
+            CanCancel = true;
+            IsProgressIndeterminate = false;
+            ProgressValue = 0;
+            StatusMessage = "正在下载文件...";
+            _downloadRecords.Clear();
+
+            using var client = CreateClient();
+            int downloadedCount = 0;
+            int errorCount = 0;
+            int total = _filesToDownload.Count;
+
+            for (int i = 0; i < total; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                var file = _filesToDownload[i];
+                try
+                {
+                    var localPath = Path.Combine(LocalDirectory, Path.GetFileName(file.ObjectKey));
+
+                    // 如果本地已存在，跳过
+                    if (File.Exists(localPath))
+                    {
+                        _downloadRecords.Add(new SyncRecord(localPath, file.ObjectKey, file.Size, "跳过", "文件已存在"));
+                        AddLog($"跳过（文件已存在）：{Path.GetFileName(file.ObjectKey)}");
+                    }
+                    else
+                    {
+                        var getRequest = new GetObjectRequest
+                        {
+                            BucketName = Bucket,
+                            Key = file.ObjectKey
+                        };
+
+                        using var response = await client.GetObjectAsync(getRequest, ct);
+                        await response.WriteResponseStreamToFileAsync(localPath, false, ct);
+
+                        downloadedCount++;
+                        _downloadRecords.Add(new SyncRecord(localPath, file.ObjectKey, file.Size, "已下载", null));
+                        AddLog($"已下载：{file.ObjectKey}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errorCount++;
+                    _downloadRecords.Add(new SyncRecord("", file.ObjectKey, file.Size, "错误", ex.Message));
+                    AddLog($"错误：{file.ObjectKey} - {ex.Message}", true);
+                }
+
+                var completed = downloadedCount + errorCount;
+                if (completed % 10 == 0 || completed == total)
+                {
+                    ProgressValue = (double)completed / total * 100;
+                    StatusMessage = $"已处理 {completed}/{total}";
+                }
+            }
+
+            StatusMessage = $"下载完成 - 已下载：{downloadedCount}，跳过：{total - downloadedCount - errorCount}，错误：{errorCount}";
+            CanScan = true;
+            CanDownload = false;
+            CanCancel = false;
+            ProgressValue = 100;
+
+            AddLog($"下载完成！已下载：{downloadedCount}，错误：{errorCount}");
+
+            // 生成下载报告
+            var reportPath = GenerateDownloadReportCsv(downloadedCount, errorCount, total);
+            if (!string.IsNullOrEmpty(reportPath))
+            {
+                AddLog($"下载报告已保存：{reportPath}");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "已取消下载";
+            CanDownload = true;
+            CanScan = true;
+            CanCancel = false;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"下载失败：{ex.Message}";
+            AddLog($"错误：{ex.Message}", true);
+        }
+        finally
+        {
+            CanCancel = false;
+        }
+    }
+
+    private string? GenerateDownloadReportCsv(int downloadedCount, int errorCount, int total)
+    {
+        try
+        {
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var defaultFileName = $"下载报告_{timestamp}.csv";
+
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                FileName = defaultFileName,
+                DefaultExt = ".csv",
+                Filter = "CSV 文件|*.csv|所有文件|*.*",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+            };
+
+            if (dialog.ShowDialog() != true)
+                return null;
+
+            var sb = new StringBuilder();
+            sb.AppendLine("操作,本地路径,对象键,文件大小,状态,错误信息");
+
+            foreach (var record in _downloadRecords)
+            {
+                sb.AppendLine($"{EscapeCsv(record.Status)},{EscapeCsv(record.LocalPath)},{EscapeCsv(record.ObjectKey)},{FormatSize(record.Size)},{EscapeCsv(record.ErrorMessage ?? "")}");
+            }
+
+            sb.AppendLine();
+            sb.AppendLine("===== 下载摘要 =====");
+            sb.AppendLine($"存储桶：{Bucket}");
+            sb.AppendLine($"搜索前缀：{(string.IsNullOrEmpty(DownloadPrefix) ? "(无)" : DownloadPrefix)}");
+            sb.AppendLine($"匹配模式：{WildcardPattern}");
+            sb.AppendLine($"下载时间：{DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"总文件数：{total}");
+            sb.AppendLine($"已下载：{downloadedCount}");
+            sb.AppendLine($"错误：{errorCount}");
+
+            File.WriteAllText(dialog.FileName, sb.ToString(), new UTF8Encoding(true));
+            return dialog.FileName;
+        }
+        catch (Exception ex)
+        {
+            AddLog($"报告生成失败：{ex.Message}", true);
+            return null;
         }
     }
 

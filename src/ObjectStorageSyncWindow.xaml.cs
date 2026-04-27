@@ -31,6 +31,11 @@ public partial class ObjectStorageSyncWindow : Window
         BackButton.Click += BackButton_Click;
         StorageTypeComboBox.SelectionChanged += StorageTypeComboBox_SelectionChanged;
 
+        // 下载相关按钮
+        BrowseDownloadDirButton.Click += BrowseDownloadDirButton_Click;
+        ListRemoteButton.Click += ListRemoteButton_Click;
+        DownloadButton.Click += DownloadButton_Click;
+
         // 同步模式 RadioButton 事件
         Mode0Radio.Checked += SyncModeRadio_Checked;
         Mode1Radio.Checked += SyncModeRadio_Checked;
@@ -105,9 +110,19 @@ public partial class ObjectStorageSyncWindow : Window
 
     private async void BrowseButton_Click(object sender, RoutedEventArgs e)
     {
+        await ShowFolderDialog("选择本地目录", path => _viewModel.LocalDirectory = path);
+    }
+
+    private async void BrowseDownloadDirButton_Click(object sender, RoutedEventArgs e)
+    {
+        await ShowFolderDialog("选择下载目录", path => _viewModel.LocalDirectory = path);
+    }
+
+    private async Task ShowFolderDialog(string description, Action<string> setPath)
+    {
         var dialog = new System.Windows.Forms.FolderBrowserDialog
         {
-            Description = "选择本地目录",
+            Description = description,
             UseDescriptionForTitle = true,
             ShowNewFolderButton = true
         };
@@ -126,7 +141,7 @@ public partial class ObjectStorageSyncWindow : Window
 
         if (result != null)
         {
-            _viewModel.LocalDirectory = result;
+            setPath(result);
         }
     }
 
@@ -138,6 +153,16 @@ public partial class ObjectStorageSyncWindow : Window
     private async void SyncButton_Click(object sender, RoutedEventArgs e)
     {
         await _viewModel.SyncAsync();
+    }
+
+    private async void ListRemoteButton_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.ListRemoteFilesAsync();
+    }
+
+    private async void DownloadButton_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.DownloadAsync();
     }
 
     private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -164,6 +189,9 @@ public partial class ObjectStorageSyncWindow : Window
         Mode2Radio.Checked -= SyncModeRadio_Checked;
         AccessKeyBox.PasswordChanged -= AccessKeyBox_PasswordChanged;
         SecretKeyBox.PasswordChanged -= SecretKeyBox_PasswordChanged;
+        BrowseDownloadDirButton.Click -= BrowseDownloadDirButton_Click;
+        ListRemoteButton.Click -= ListRemoteButton_Click;
+        DownloadButton.Click -= DownloadButton_Click;
     }
 
     private class Win32Window : System.Windows.Forms.IWin32Window
