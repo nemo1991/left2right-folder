@@ -175,6 +175,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- 下载路径前缀 -->
@@ -200,8 +201,15 @@
                              Tag="(如 *.jpg, *.png, folder/*.zip)"/>
                 </Grid>
 
+                <!-- 扫描选项 -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10">
+                    <CheckBox x:Name="TrieScanCheckBox" IsChecked="{Binding UseTrieScan}" VerticalAlignment="Center">
+                        <TextBlock Text="使用前缀树扫描（推荐，大目录更高效）" VerticalAlignment="Center"/>
+                    </CheckBox>
+                </StackPanel>
+
                 <!-- 列出文件 + 下载按钮 -->
-                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button x:Name="ListRemoteButton" Content="列出文件" Width="100" Margin="0,0,10,0"/>
                     <Button x:Name="DownloadButton" Content="下载" Width="100" IsEnabled="{Binding CanDownload, Mode=OneWay}"/>
                 </StackPanel>

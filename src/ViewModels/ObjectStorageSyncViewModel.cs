@@ -12,6 +12,7 @@ using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using CommunityToolkit.Mvvm.ComponentModel;
+using file_sync.Services;
 
 namespace file_sync.ViewModels;
 
@@ -50,6 +51,7 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
     [ObservableProperty] private string _wildcardPattern = "";
     [ObservableProperty] private bool _canDownload = false;
     [ObservableProperty] private int _toDownloadCount;
+    [ObservableProperty] private bool _useTrieScan = true; // 默认使用前缀树扫描
     private readonly List<DownloadRecord> _filesToDownload = new();
     private readonly List<SyncRecord> _downloadRecords = new();
     private record DownloadRecord(string ObjectKey, long Size);
@@ -285,65 +287,18 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
             Logs.Clear();
             _filesToDownload.Clear();
 
-            using var client = CreateClient();
+            AddLog($"扫描模式: {(UseTrieScan ? "前缀树扫描（推荐）" : "平铺扫描")}");
+            AddLog($"搜索前缀: {(string.IsNullOrEmpty(DownloadPrefix) ? "(根目录)" : DownloadPrefix)}");
+            AddLog($"匹配模式: {WildcardPattern}");
 
-            // 构建搜索前缀和模式
-            var searchPrefix = string.IsNullOrEmpty(DownloadPrefix) ? null : DownloadPrefix.TrimEnd('/') + "/";
-            var pattern = WildcardPattern;
-
-            // 将通配符转换为正则表达式
-            var regexPattern = "^" + System.Text.RegularExpressions.Regex.Escape(pattern)
-                .Replace("\\*", ".*")
-                .Replace("\\?", ".") + "$";
-
-            AddLog($"搜索前缀: {(searchPrefix ?? "(根目录)")}");
-            AddLog($"匹配模式: {pattern}");
-
-            var matchingFiles = new List<S3Object>();
-
-            // 分页获取文件列表
-            var listRequest = new ListObjectsV2Request
+            if (UseTrieScan)
             {
-                BucketName = Bucket,
-                Prefix = searchPrefix
-            };
-
-            ListObjectsV2Response listResponse;
-            do
+                await ListRemoteFilesWithTrieAsync(ct);
+            }
+            else
             {
-                ct.ThrowIfCancellationRequested();
-                listResponse = await client.ListObjectsV2Async(listRequest, ct);
-
-                foreach (var obj in listResponse.S3Objects)
-                {
-                    // 获取文件名（不含前缀）
-                    var key = obj.Key;
-                    if (!string.IsNullOrEmpty(searchPrefix) && key.StartsWith(searchPrefix))
-                    {
-                        key = key.Substring(searchPrefix.Length);
-                    }
-
-                    // 检查通配符匹配
-                    if (System.Text.RegularExpressions.Regex.IsMatch(key, regexPattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase))
-                    {
-                        matchingFiles.Add(obj);
-                        _filesToDownload.Add(new DownloadRecord(obj.Key, obj.Size));
-                    }
-                }
-
-                listRequest.ContinuationToken = listResponse.NextContinuationToken;
-            } while (listResponse.IsTruncated);
-
-            ToDownloadCount = matchingFiles.Count;
-            long totalSize = matchingFiles.Sum(f => f.Size);
-
-            StatusMessage = $"找到 {ToDownloadCount} 个匹配的文件";
-            CanDownload = true;
-            CanCancel = false;
-            IsProgressIndeterminate = false;
-            ProgressValue = 100;
-
-            AddLog($"列出完成 - 共找到 {ToDownloadCount} 个匹配文件，总大小 {FormatSize(totalSize)}");
+                await ListRemoteFilesFlatAsync(ct);
+            }
         }
         catch (OperationCanceledException)
         {
@@ -362,6 +317,90 @@ public partial class ObjectStorageSyncViewModel : ObservableObject
             CanScan = true;
             CanCancel = false;
         }
+    }
+
+    /// <summary>
+    /// 使用前缀树扫描列出远程文件（推荐）
+    /// 通过逐层展开目录树，只扫描可能包含匹配文件的路径
+    /// </summary>
+    private async Task ListRemoteFilesWithTrieAsync(CancellationToken ct)
+    {
+        using var client = CreateClient();
+        var scanner = new ObjectStorageScanner(client, Bucket, DownloadPrefix, WildcardPattern, ct);
+
+        var progress = new Progress<string>(msg => AddLog(msg));
+        await scanner.ScanAsync(progress);
+
+        // 将扫描结果添加到下载列表
+        foreach (var file in scanner.MatchedFiles)
+        {
+            _filesToDownload.Add(new DownloadRecord(file.Key, file.Size));
+        }
+
+        ToDownloadCount = scanner.MatchedFiles.Count;
+        StatusMessage = $"找到 {ToDownloadCount} 个匹配的文件";
+        IsProgressIndeterminate = false;
+        ProgressValue = 100;
+
+        AddLog($"扫描统计: {scanner.Statistics}");
+    }
+
+    /// <summary>
+    /// 使用平铺扫描列出远程文件（传统方式）
+    /// 一次性列出所有文件再过滤
+    /// </summary>
+    private async Task ListRemoteFilesFlatAsync(CancellationToken ct)
+    {
+        using var client = CreateClient();
+
+        var searchPrefix = string.IsNullOrEmpty(DownloadPrefix) ? null : DownloadPrefix.TrimEnd('/') + "/";
+
+        // 将通配符转换为正则表达式
+        var regexPattern = "^" + System.Text.RegularExpressions.Regex.Escape(WildcardPattern)
+            .Replace("\\*", ".*")
+            .Replace("\\?", ".") + "$";
+
+        var matchingFiles = new List<S3Object>();
+
+        // 分页获取文件列表
+        var listRequest = new ListObjectsV2Request
+        {
+            BucketName = Bucket,
+            Prefix = searchPrefix
+        };
+
+        ListObjectsV2Response listResponse;
+        do
+        {
+            ct.ThrowIfCancellationRequested();
+            listResponse = await client.ListObjectsV2Async(listRequest, ct);
+
+            foreach (var obj in listResponse.S3Objects)
+            {
+                var key = obj.Key;
+                if (!string.IsNullOrEmpty(searchPrefix) && key.StartsWith(searchPrefix))
+                {
+                    key = key.Substring(searchPrefix.Length);
+                }
+
+                if (System.Text.RegularExpressions.Regex.IsMatch(key, regexPattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                {
+                    matchingFiles.Add(obj);
+                    _filesToDownload.Add(new DownloadRecord(obj.Key, obj.Size));
+                }
+            }
+
+            listRequest.ContinuationToken = listResponse.NextContinuationToken;
+        } while (listResponse.IsTruncated);
+
+        ToDownloadCount = matchingFiles.Count;
+        long totalSize = matchingFiles.Sum(f => f.Size);
+
+        StatusMessage = $"找到 {ToDownloadCount} 个匹配的文件";
+        IsProgressIndeterminate = false;
+        ProgressValue = 100;
+
+        AddLog($"列出完成 - 共找到 {ToDownloadCount} 个匹配文件，总大小 {FormatSize(totalSize)}");
     }
 
     public async Task DownloadAsync()
