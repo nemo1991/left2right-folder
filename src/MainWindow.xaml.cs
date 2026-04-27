@@ -7,18 +7,18 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Globalization;
 using System.Windows.Interop;
+using HandyControl.Controls;
 using file_sync.Services;
 using file_sync.ViewModels;
 
 namespace file_sync;
 
-public partial class MainWindow : Window
+public partial class MainWindow : HandyControl.Controls.Window
 {
     private readonly MainViewModel _viewModel;
 
     public MainWindow()
     {
-        // 初始化依赖注入
         var fileScanner = new FileScanner();
         var hashCalculator = new HashCalculator();
         var fileComparator = new FileComparator();
@@ -26,7 +26,6 @@ public partial class MainWindow : Window
         var reportGenerator = new CsvReportGenerator();
         var appState = new AppState();
 
-        // 初始化 AppState
         _ = appState.InitializeAsync();
 
         _viewModel = new MainViewModel(
@@ -40,14 +39,12 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = _viewModel;
 
-        // 添加事件处理器
         BrowseSourceButton.Click += BrowseSourceButton_Click;
         BrowseTargetButton.Click += BrowseTargetButton_Click;
         ScanButton.Click += ScanButton_Click;
         MigrateButton.Click += MigrateButton_Click;
         CancelButton.Click += CancelButton_Click;
 
-        // 日志自动滚动
         SubscribeToLogCollection();
     }
 
@@ -64,7 +61,6 @@ public partial class MainWindow : Window
             {
                 if (e.Action == NotifyCollectionChangedAction.Add && LogListBox.Items.Count > 0)
                 {
-                    // 使用 BeginInvoke 延迟滚动，避免在 CollectionChanged 事件期间操作 ListBox
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
                         if (LogListBox.Items.Count > 0)
@@ -151,7 +147,6 @@ public partial class MainWindow : Window
         MigrateButton.Click -= MigrateButton_Click;
         BackButton.Click -= BackButton_Click;
 
-        // 清理日志集合订阅
         if (_viewModel.Logs is ObservableCollection<LogEntry> collection)
         {
             collection.CollectionChanged -= (s, ev) => { };

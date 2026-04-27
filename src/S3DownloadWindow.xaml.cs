@@ -2,11 +2,12 @@ using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using HandyControl.Controls;
 using file_sync.ViewModels;
 
 namespace file_sync;
 
-public partial class S3DownloadWindow : Window
+public partial class S3DownloadWindow : HandyControl.Controls.Window
 {
     private readonly S3DownloadViewModel _viewModel;
 

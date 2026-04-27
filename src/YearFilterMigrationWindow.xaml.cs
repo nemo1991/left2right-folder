@@ -5,11 +5,12 @@ using System.Collections.Specialized;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
+using HandyControl.Controls;
 using file_sync.ViewModels;
 
 namespace file_sync;
 
-public partial class YearFilterMigrationWindow : Window
+public partial class YearFilterMigrationWindow : HandyControl.Controls.Window
 {
     private readonly YearFilterMigrationViewModel _viewModel;
 
@@ -20,18 +21,14 @@ public partial class YearFilterMigrationWindow : Window
         _viewModel = new YearFilterMigrationViewModel();
         DataContext = _viewModel;
 
-        // 添加事件处理器
         BrowseSourceButton.Click += BrowseSourceButton_Click;
         BrowseTargetButton.Click += BrowseTargetButton_Click;
         ScanButton.Click += ScanButton_Click;
         MigrateButton.Click += MigrateButton_Click;
         CancelButton.Click += CancelButton_Click;
         BackButton.Click += BackButton_Click;
-
-        // 年份列表选择
         YearListBox.SelectionChanged += YearListBox_SelectionChanged;
 
-        // 日志自动滚动
         SubscribeToLogCollection();
     }
 

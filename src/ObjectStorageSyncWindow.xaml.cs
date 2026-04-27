@@ -5,11 +5,12 @@ using System.Collections.Specialized;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using HandyControl.Controls;
 using file_sync.ViewModels;
 
 namespace file_sync;
 
-public partial class ObjectStorageSyncWindow : Window
+public partial class ObjectStorageSyncWindow : HandyControl.Controls.Window
 {
     private readonly ObjectStorageSyncViewModel _viewModel;
 
@@ -20,32 +21,22 @@ public partial class ObjectStorageSyncWindow : Window
         _viewModel = new ObjectStorageSyncViewModel();
         DataContext = _viewModel;
 
-        // 设置默认 Endpoint
         UpdateEndpointHint(0);
 
-        // 添加事件处理器
         BrowseButton.Click += BrowseButton_Click;
         ScanButton.Click += ScanButton_Click;
         SyncButton.Click += SyncButton_Click;
         CancelButton.Click += CancelButton_Click;
         BackButton.Click += BackButton_Click;
         StorageTypeComboBox.SelectionChanged += StorageTypeComboBox_SelectionChanged;
-
-        // 下载相关按钮
-        BrowseDownloadDirButton.Click += BrowseDownloadDirButton_Click;
         ListRemoteButton.Click += ListRemoteButton_Click;
         DownloadButton.Click += DownloadButton_Click;
-
-        // 同步模式 RadioButton 事件
         Mode0Radio.Checked += SyncModeRadio_Checked;
         Mode1Radio.Checked += SyncModeRadio_Checked;
         Mode2Radio.Checked += SyncModeRadio_Checked;
-
-        // PasswordBox 事件
         AccessKeyBox.PasswordChanged += AccessKeyBox_PasswordChanged;
         SecretKeyBox.PasswordChanged += SecretKeyBox_PasswordChanged;
 
-        // 日志自动滚动
         SubscribeToLogCollection();
     }
 
@@ -111,11 +102,6 @@ public partial class ObjectStorageSyncWindow : Window
     private async void BrowseButton_Click(object sender, RoutedEventArgs e)
     {
         await ShowFolderDialog("选择本地目录", path => _viewModel.LocalDirectory = path);
-    }
-
-    private async void BrowseDownloadDirButton_Click(object sender, RoutedEventArgs e)
-    {
-        await ShowFolderDialog("选择下载目录", path => _viewModel.LocalDirectory = path);
     }
 
     private async Task ShowFolderDialog(string description, Action<string> setPath)
@@ -189,7 +175,6 @@ public partial class ObjectStorageSyncWindow : Window
         Mode2Radio.Checked -= SyncModeRadio_Checked;
         AccessKeyBox.PasswordChanged -= AccessKeyBox_PasswordChanged;
         SecretKeyBox.PasswordChanged -= SecretKeyBox_PasswordChanged;
-        BrowseDownloadDirButton.Click -= BrowseDownloadDirButton_Click;
         ListRemoteButton.Click -= ListRemoteButton_Click;
         DownloadButton.Click -= DownloadButton_Click;
     }
