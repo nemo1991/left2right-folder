@@ -27,10 +27,7 @@ public partial class ObjectStorageSyncWindow : HandyControl.Controls.Window
         ScanButton.Click += ScanButton_Click;
         SyncButton.Click += SyncButton_Click;
         CancelButton.Click += CancelButton_Click;
-        BackButton.Click += BackButton_Click;
         StorageTypeComboBox.SelectionChanged += StorageTypeComboBox_SelectionChanged;
-        ListRemoteButton.Click += ListRemoteButton_Click;
-        DownloadButton.Click += DownloadButton_Click;
         Mode0Radio.Checked += SyncModeRadio_Checked;
         Mode1Radio.Checked += SyncModeRadio_Checked;
         Mode2Radio.Checked += SyncModeRadio_Checked;
@@ -141,24 +138,9 @@ public partial class ObjectStorageSyncWindow : HandyControl.Controls.Window
         await _viewModel.SyncAsync();
     }
 
-    private async void ListRemoteButton_Click(object sender, RoutedEventArgs e)
-    {
-        await _viewModel.ListRemoteFilesAsync();
-    }
-
-    private async void DownloadButton_Click(object sender, RoutedEventArgs e)
-    {
-        await _viewModel.DownloadAsync();
-    }
-
     private void CancelButton_Click(object sender, RoutedEventArgs e)
     {
         _viewModel.Cancel();
-    }
-
-    private void BackButton_Click(object sender, RoutedEventArgs e)
-    {
-        Close();
     }
 
     protected override void OnClosed(EventArgs e)
@@ -168,15 +150,12 @@ public partial class ObjectStorageSyncWindow : HandyControl.Controls.Window
         ScanButton.Click -= ScanButton_Click;
         SyncButton.Click -= SyncButton_Click;
         CancelButton.Click -= CancelButton_Click;
-        BackButton.Click -= BackButton_Click;
         StorageTypeComboBox.SelectionChanged -= StorageTypeComboBox_SelectionChanged;
         Mode0Radio.Checked -= SyncModeRadio_Checked;
         Mode1Radio.Checked -= SyncModeRadio_Checked;
         Mode2Radio.Checked -= SyncModeRadio_Checked;
         AccessKeyBox.PasswordChanged -= AccessKeyBox_PasswordChanged;
         SecretKeyBox.PasswordChanged -= SecretKeyBox_PasswordChanged;
-        ListRemoteButton.Click -= ListRemoteButton_Click;
-        DownloadButton.Click -= DownloadButton_Click;
     }
 
     private class Win32Window : System.Windows.Forms.IWin32Window

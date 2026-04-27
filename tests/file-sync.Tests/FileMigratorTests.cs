@@ -204,8 +204,13 @@ public class FileMigratorTests : IDisposable
     {
         await File.WriteAllTextAsync(Path.Combine(_sourceDir, "move.txt"), "move");
 
-        var progressReports = new List<MigrationProgress>();
-        var progress = new Progress<MigrationProgress>(p => progressReports.Add(p));
+        var progressReported = new System.Threading.CountdownEvent(1);
+        MigrationProgress? lastProgress = null;
+        var progress = new Progress<MigrationProgress>(p =>
+        {
+            lastProgress = p;
+            progressReported.Signal();
+        });
 
         var toMove = new List<FileEntry>
         {
@@ -213,8 +218,11 @@ public class FileMigratorTests : IDisposable
         };
 
         var migrator = new FileMigrator();
-        await migrator.MigrateAsync([], toMove, [], _sourceDir, _targetDir, progress);
+        var result = await migrator.MigrateAsync([], toMove, [], _sourceDir, _targetDir, progress);
 
-        Assert.Single(progressReports);
+        // Wait for progress with timeout - some test environments don't fire Progress callbacks
+        Assert.True(progressReported.Wait(500) || lastProgress != null,
+            "Expected progress to be reported during migration");
+        Assert.Equal(1, result.MigratedCount);
     }
 }

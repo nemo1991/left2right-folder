@@ -94,11 +94,6 @@ public partial class S3DownloadWindow : HandyControl.Controls.Window
         _viewModel.Cancel();
     }
 
-    private void BackButton_Click(object sender, RoutedEventArgs e)
-    {
-        Close();
-    }
-
     private class Win32Window : System.Windows.Forms.IWin32Window
     {
         public Win32Window(IntPtr handle) => Handle = handle;

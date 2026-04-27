@@ -7,83 +7,60 @@
         xmlns:hc="https://handyorg.github.io/handycontrol"
         xmlns:local="clr-namespace:file_sync"
         mc:Ignorable="d"
-        Title="按年份迁移文件" Height="750" Width="900"
+        Title="按年份迁移文件" Height="520" Width="800"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource RegionBrush}"
         Icon="icon.ico">
 
-    <Grid Margin="20">
+    <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- 返回主页 -->
-        <Button x:Name="BackButton" Grid.Row="0" Content="返回主页"
-                Style="{StaticResource ButtonDefault}" HorizontalAlignment="Left"
-                Margin="0,0,0,15" Click="BackButton_Click"/>
-
-        <!-- 目录选择区域 -->
-        <hc:Card Grid.Row="1" Margin="0,0,0,15" Padding="15">
+        <!-- 目录与年份选择 -->
+        <hc:Card Grid.Row="0" Margin="0,0,0,10" Padding="12">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="70"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="70"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
                 <!-- 源目录 -->
-                <Grid Grid.Row="0" Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="源目录:" VerticalAlignment="Center"/>
-                    <hc:TextBox Grid.Column="1" Text="{Binding SourceDirectory, UpdateSourceTrigger=PropertyChanged}"/>
-                    <Button x:Name="BrowseSourceButton" Grid.Column="2" Content="浏览..."
-                            Width="80" Margin="10,0,0,0"/>
-                </Grid>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="源目录:" VerticalAlignment="Center"/>
+                <hc:TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SourceDirectory, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"/>
+                <Button Grid.Row="0" Grid.Column="2" x:Name="BrowseSourceButton" Content="浏览..."
+                        Width="70" Margin="0,0,15,0"/>
 
                 <!-- 年份选择 -->
-                <Grid Grid.Row="1" Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80"/>
-                        <ColumnDefinition Width="150"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="迁移年份:" VerticalAlignment="Center"/>
-                    <hc:TextBox x:Name="YearTextBox" Grid.Column="1"
-                               Text="{Binding YearText, UpdateSourceTrigger=PropertyChanged}"
-                               FontSize="14" FontWeight="Bold" MaxLength="4"/>
-                    <Button Grid.Column="2" x:Name="YearDropdownButton"
-                            Width="32" Height="32" Margin="4,0,0,0"
+                <TextBlock Grid.Row="0" Grid.Column="3" Text="迁移年份:" VerticalAlignment="Center"/>
+                <StackPanel Grid.Row="0" Grid.Column="4" Orientation="Horizontal">
+                    <hc:TextBox x:Name="YearTextBox" Text="{Binding YearText, UpdateSourceTrigger=PropertyChanged}"
+                               FontSize="14" FontWeight="Bold" MaxLength="4" Width="80"/>
+                    <Button x:Name="YearDropdownButton" Width="28" Height="28" Margin="4,0,0,0"
                             Click="YearDropdownButton_Click">
                         <Path Data="M0,0 L10,0 L5,8 Z" Fill="{DynamicResource PrimaryBrush}"
                               Width="10" Height="8" Stretch="Fill"/>
                     </Button>
-                    <TextBlock Grid.Column="3" Text="{Binding YearInfoText}"
-                               VerticalAlignment="Center" Margin="15,0,0,0"
-                               Foreground="{Binding YearValidationColor}" FontSize="13"/>
-                </Grid>
+                    <TextBlock Text="{Binding YearInfoText}" VerticalAlignment="Center" Margin="10,0,0,0"
+                               Foreground="{Binding YearValidationColor}" FontSize="12"/>
+                </StackPanel>
 
                 <!-- 目标目录 -->
-                <Grid Grid.Row="2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="目标目录:" VerticalAlignment="Center"/>
-                    <hc:TextBox Grid.Column="1" Text="{Binding TargetDirectory, UpdateSourceTrigger=PropertyChanged}"/>
-                    <Button x:Name="BrowseTargetButton" Grid.Column="2" Content="浏览..."
-                            Width="80" Margin="10,0,0,0"/>
-                </Grid>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="目标目录:" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                <hc:TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TargetDirectory, UpdateSourceTrigger=PropertyChanged}" Margin="0,8,8,0"/>
+                <Button Grid.Row="1" Grid.Column="2" x:Name="BrowseTargetButton" Content="浏览..."
+                        Width="70" Margin="0,8,15,0"/>
             </Grid>
         </hc:Card>
 
@@ -92,16 +69,16 @@
                Placement="Bottom" StaysOpen="False" AllowsTransparency="True"
                PopupAnimation="Slide">
             <Border Background="White" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
-                    MaxHeight="300" Margin="2">
+                    MaxHeight="250" Margin="2">
                 <Border.Effect>
                     <DropShadowEffect Color="Gray" Opacity="0.3" BlurRadius="6"/>
                 </Border.Effect>
                 <ListBox x:Name="YearListBox" BorderThickness="0"
                          DisplayMemberPath="YearText" SelectedValuePath="Year"
-                         MaxHeight="300">
+                         MaxHeight="250">
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
-                            <Setter Property="Padding" Value="12,6"/>
+                            <Setter Property="Padding" Value="10,5"/>
                             <Setter Property="Cursor" Value="Hand"/>
                         </Style>
                     </ListBox.ItemContainerStyle>
@@ -110,7 +87,7 @@
         </Popup>
 
         <!-- 操作按钮区域 -->
-        <Grid Grid.Row="2" Margin="0,0,0,15">
+        <Grid Grid.Row="1" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -119,61 +96,59 @@
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Background="{DynamicResource SecondaryRegionBrush}"
-                    CornerRadius="4" Padding="15,8" Margin="0,0,15,0">
+                    CornerRadius="4" Padding="12,6" Margin="0,0,10,0">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="待迁移：" Margin="0,0,15,0">
+                    <TextBlock Text="待迁移:" Margin="0,0,10,0">
                         <Run FontWeight="Bold" Foreground="{DynamicResource SuccessBrush}" Text="{Binding ToMoveCount, Mode=OneWay}"/>
                     </TextBlock>
-                    <TextBlock Text="总大小：" Margin="0,0,15,0" Visibility="{Binding TotalSizeVisibility, Mode=OneWay}">
+                    <TextBlock Text="总大小:" Margin="0,0,10,0" Visibility="{Binding TotalSizeVisibility, Mode=OneWay}">
                         <Run FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Text="{Binding TotalSizeText, Mode=OneWay}"/>
                     </TextBlock>
-                    <TextBlock Text="目标子目录：" Margin="0,0,15,0">
+                    <TextBlock Text="目标:" Margin="0,0,10,0">
                         <Run FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Text="{Binding TargetSubDirInfo, Mode=OneWay}"/>
                     </TextBlock>
-                    <TextBlock Text="警告：" Margin="0,0,15,0" Visibility="{Binding WarningVisibility, Mode=OneWay}">
+                    <TextBlock Text="警告:" Visibility="{Binding WarningVisibility, Mode=OneWay}">
                         <Run FontWeight="Bold" Foreground="{DynamicResource WarningBrush}" Text="{Binding WarningText, Mode=OneWay}"/>
                     </TextBlock>
                 </StackPanel>
             </Border>
 
-            <Button x:Name="ScanButton" Grid.Column="1" Content="{Binding ScanButtonContent, Mode=OneWay}"
-                    Style="{StaticResource ButtonPrimary}" Width="100" Margin="0,0,10,0"/>
-            <Button x:Name="MigrateButton" Grid.Column="2" Content="{Binding MigrateButtonContent, Mode=OneWay}"
-                    Style="{StaticResource ButtonSuccess}" Width="100" Margin="0,0,10,0"/>
-            <Button x:Name="CancelButton" Grid.Column="3" Content="取消"
-                    Style="{StaticResource ButtonDanger}" Width="80"/>
+            <Button Grid.Column="1" x:Name="ScanButton" Content="{Binding ScanButtonContent, Mode=OneWay}"
+                    Style="{StaticResource ButtonPrimary}" Width="80" Margin="0,0,8,0"/>
+            <Button Grid.Column="2" x:Name="MigrateButton" Content="{Binding MigrateButtonContent, Mode=OneWay}"
+                    Style="{StaticResource ButtonSuccess}" Width="80" Margin="0,0,8,0"/>
+            <Button Grid.Column="3" x:Name="CancelButton" Content="取消"
+                    Style="{StaticResource ButtonDanger}" Width="60"/>
         </Grid>
 
         <!-- 进度条 -->
-        <Grid Grid.Row="3" Margin="0,0,0,15">
+        <Grid Grid.Row="2" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="150"/>
+                <ColumnDefinition Width="120"/>
             </Grid.ColumnDefinitions>
 
-            <hc:CircleProgressBar Grid.Column="0" Value="{Binding ProgressValue, Mode=OneWay}"
-                                 IsIndeterminate="{Binding IsProgressIndeterminate, Mode=OneWay}"
-                                 ShowText="False" Height="24"/>
+            <ProgressBar Grid.Column="0" Value="{Binding ProgressValue, Mode=OneWay}"
+                             Maximum="100" Minimum="0"
+                             IsIndeterminate="{Binding IsProgressIndeterminate, Mode=OneWay}"
+                             Height="20" Margin="0,0,0,0"/>
             <TextBlock Grid.Column="1" Text="{Binding StatusMessage, Mode=OneWay}"
                        VerticalAlignment="Center" Margin="10,0,0,0"
                        TextTrimming="CharacterEllipsis"/>
         </Grid>
 
         <!-- 日志区域 -->
-        <hc:Card Grid.Row="4" Margin="0,0,0,15" Padding="10">
+        <hc:Card Grid.Row="3" Padding="8">
             <ListBox x:Name="LogListBox" ItemsSource="{Binding Logs}" BorderThickness="0"
                      Background="Transparent">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding Message}" TextWrapping="Wrap"
-                                   Foreground="{Binding IsError, Converter={StaticResource BoolToColorConverter}, FallbackValue=Black}"/>
+                                   Foreground="{Binding IsError, Converter={StaticResource BoolToColorConverter}, FallbackValue=Black}"
+                                   FontSize="12"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
         </hc:Card>
-
-        <!-- 底部说明 -->
-        <TextBlock Grid.Row="5" Text="提示：选择源目录、目标目录和年份，点击扫描查找该年份修改的文件，确认后点击开始迁移将文件移动至目标目录的年份子目录中。"
-                   Opacity="0.6" Margin="0,10,0,0" TextWrapping="Wrap"/>
     </Grid>
 </hc:Window>

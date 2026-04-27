@@ -3,9 +3,6 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Data;
-using System.Windows.Media;
-using System.Globalization;
 using System.Windows.Interop;
 using HandyControl.Controls;
 using file_sync.Services;
@@ -46,11 +43,6 @@ public partial class MainWindow : HandyControl.Controls.Window
         CancelButton.Click += CancelButton_Click;
 
         SubscribeToLogCollection();
-    }
-
-    private void BackButton_Click(object sender, RoutedEventArgs e)
-    {
-        Close();
     }
 
     private void SubscribeToLogCollection()
@@ -145,28 +137,10 @@ public partial class MainWindow : HandyControl.Controls.Window
         BrowseTargetButton.Click -= BrowseTargetButton_Click;
         ScanButton.Click -= ScanButton_Click;
         MigrateButton.Click -= MigrateButton_Click;
-        BackButton.Click -= BackButton_Click;
 
         if (_viewModel.Logs is ObservableCollection<LogEntry> collection)
         {
             collection.CollectionChanged -= (s, ev) => { };
         }
-    }
-}
-
-public class BoolToColorConverter : IValueConverter
-{
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        if (value is bool isError && isError)
-        {
-            return new SolidColorBrush(Colors.Red);
-        }
-        return new SolidColorBrush(Colors.Black);
-    }
-
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        throw new NotImplementedException();
     }
 }

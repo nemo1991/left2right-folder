@@ -452,11 +452,18 @@ public partial class YearFilterMigrationViewModel : ObservableObject
         var timestamp = DateTime.Now.ToString("HH:mm:ss");
         var log = new LogEntry($"[{timestamp}] {(isError ? "X " : "")}{message}", isError);
 
-        Application.Current?.Dispatcher.Invoke(() =>
+        try
         {
-            Logs.Add(log);
-            while (Logs.Count > 1000)
-                Logs.RemoveAt(0);
-        });
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                Logs.Add(log);
+                while (Logs.Count > 1000)
+                    Logs.RemoveAt(0);
+            });
+        }
+        catch (Exception)
+        {
+            // 忽略日志添加失败
+        }
     }
 }

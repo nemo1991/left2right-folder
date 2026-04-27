@@ -6,167 +6,135 @@
         xmlns:hc="https://handyorg.github.io/handycontrol"
         xmlns:local="clr-namespace:file_sync"
         mc:Ignorable="d"
-        Title="从对象存储下载" Height="750" Width="850"
+        Title="从对象存储下载" Height="550" Width="800"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource RegionBrush}"
         Icon="icon.ico">
 
-    <Grid Margin="20">
+    <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- 返回主页 -->
-        <Button x:Name="BackButton" Grid.Row="0" Content="返回主页"
-                Style="{StaticResource ButtonDefault}" HorizontalAlignment="Left"
-                Margin="0,0,0,15" Click="BackButton_Click"/>
-
         <!-- 存储配置 -->
-        <hc:Card Grid.Row="1" Margin="0,0,0,15" Padding="15">
+        <hc:Card Grid.Row="0" Margin="0,0,0,10" Padding="12">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="90"/>
+                    <ColumnDefinition Width="80"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="70"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="70"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- 存储类型 -->
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="存储类型:" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                <ComboBox x:Name="StorageTypeComboBox" Grid.Row="0" Grid.Column="1" Margin="0,0,0,10"
-                          HorizontalAlignment="Left" Width="180"
+                <!-- 第一行: 存储类型 + Bucket + Endpoint -->
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="存储类型:" VerticalAlignment="Center"/>
+                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="StorageTypeComboBox" SelectedIndex="0"
+                          Width="140" Margin="0,0,8,0"
                           SelectionChanged="StorageTypeComboBox_SelectionChanged">
                     <ComboBoxItem Content="AWS S3"/>
                     <ComboBoxItem Content="阿里云 OSS"/>
                     <ComboBoxItem Content="腾讯云 COS"/>
                     <ComboBoxItem Content="MinIO"/>
                 </ComboBox>
-                <TextBlock x:Name="EndpointHint" Grid.Row="0" Grid.Column="2" Text="s3.amazonaws.com"
-                           VerticalAlignment="Center" Margin="15,0,0,10" Opacity="0.6"/>
 
-                <!-- Endpoint -->
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Endpoint:" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                <hc:TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,10"
-                           Text="{Binding Endpoint, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Grid.Row="0" Grid.Column="2" Text="Bucket:" VerticalAlignment="Center"/>
+                <hc:TextBox Grid.Row="0" Grid.Column="3" Text="{Binding Bucket, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"/>
 
-                <!-- AccessKey -->
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="AccessKey:" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                <PasswordBox x:Name="AccessKeyBox" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="0" Grid.Column="4" Text="Endpoint:" VerticalAlignment="Center"/>
+                <hc:TextBox Grid.Row="0" Grid.Column="5" Text="{Binding Endpoint, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <!-- SecretKey -->
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="SecretKey:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <PasswordBox x:Name="SecretKeyBox" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"/>
-            </Grid>
-        </hc:Card>
-
-        <!-- Bucket 配置 -->
-        <hc:Card Grid.Row="2" Margin="0,0,0,15" Padding="15">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <!-- Bucket -->
-                <Grid Grid.Row="0" Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Bucket:" VerticalAlignment="Center"/>
-                    <hc:TextBox Grid.Column="1" Text="{Binding Bucket, UpdateSourceTrigger=PropertyChanged}"/>
-                </Grid>
-
-                <!-- 存储路径前缀 -->
-                <Grid Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="存储路径:" VerticalAlignment="Center"/>
-                    <hc:TextBox Grid.Column="1" Text="{Binding DownloadPrefix, UpdateSourceTrigger=PropertyChanged}"
-                               hc:InfoElement.Placeholder="可选，填写路径前缀如 folder/"/>
-                </Grid>
+                <!-- 第二行: AccessKey + SecretKey -->
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="AccessKey:" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                <PasswordBox Grid.Row="1" Grid.Column="1" x:Name="AccessKeyBox" Margin="0,8,8,0"/>
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="SecretKey:" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                <PasswordBox Grid.Row="1" Grid.Column="3" x:Name="SecretKeyBox" Margin="0,8,8,0"/>
+                <TextBlock Grid.Row="1" Grid.Column="4" Text="提示:" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                <TextBlock Grid.Row="1" Grid.Column="5" x:Name="EndpointHint" Text="s3.amazonaws.com"
+                           VerticalAlignment="Center" Margin="0,8,0,0" Opacity="0.6"/>
             </Grid>
         </hc:Card>
 
         <!-- 下载配置 -->
-        <hc:Card Grid.Row="3" Margin="0,0,0,15" Padding="15">
+        <hc:Card Grid.Row="1" Margin="0,0,0,10" Padding="12">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- 本地目录 -->
-                <Grid Grid.Row="0" Margin="0,0,0,10">
+                <!-- 本地目录 + 路径前缀 + 浏览按钮 -->
+                <Grid Grid.Row="0" Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80"/>
+                        <ColumnDefinition Width="70"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="70"/>
+                        <ColumnDefinition Width="150"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="本地目录:" VerticalAlignment="Center"/>
                     <hc:TextBox Grid.Column="1" Text="{Binding LocalDirectory, UpdateSourceTrigger=PropertyChanged}"/>
-                    <Button x:Name="BrowseButton" Grid.Column="2" Content="浏览..." Width="80" Margin="10,0,0,0"/>
+                    <TextBlock Grid.Column="2" Text="路径前缀:" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    <hc:TextBox Grid.Column="3" Text="{Binding DownloadPrefix, UpdateSourceTrigger=PropertyChanged}"
+                               hc:InfoElement.Placeholder="如 folder/" Margin="8,0,0,0"/>
+                    <Button Grid.Column="4" x:Name="BrowseButton" Content="浏览..." Width="70" Margin="8,0,0,0"/>
                 </Grid>
 
-                <!-- 通配符 -->
-                <Grid Grid.Row="1" Margin="0,0,0,10">
+                <!-- 通配符 + 选项 + 按钮 -->
+                <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80"/>
+                        <ColumnDefinition Width="70"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="通配符:" VerticalAlignment="Center"/>
                     <hc:TextBox Grid.Column="1" Text="{Binding WildcardPattern, UpdateSourceTrigger=PropertyChanged}"
-                               hc:InfoElement.Placeholder="如 *.jpg, *.png, folder/*.zip"/>
+                               hc:InfoElement.Placeholder="如 *.jpg, *.png"/>
+                    <CheckBox Grid.Column="2" IsChecked="{Binding UseTrieScan}" Content="前缀树扫描"
+                              Margin="15,0,0,0" VerticalAlignment="Center"/>
+                    <Button Grid.Column="3" x:Name="ListButton" Content="列出文件" Width="80" Margin="15,0,0,0"/>
+                    <Button Grid.Column="4" x:Name="DownloadButton" Content="下载" Width="70" Margin="8,0,0,0"/>
                 </Grid>
-
-                <!-- 扫描选项 -->
-                <CheckBox Grid.Row="2" IsChecked="{Binding UseTrieScan}" Content="使用前缀树扫描（推荐）" Margin="0,0,0,10"/>
-
-                <!-- 操作按钮 -->
-                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button x:Name="ListButton" Content="列出文件" Width="100" Margin="0,0,10,0"/>
-                    <Button x:Name="DownloadButton" Content="下载" Width="100" Margin="0,0,10,0"/>
-                    <Button x:Name="CancelButton" Content="取消" Width="80"/>
-                </StackPanel>
             </Grid>
         </hc:Card>
 
-        <!-- 进度条 -->
-        <Grid Grid.Row="4" Margin="0,0,0,15">
+        <!-- 进度条 + 取消按钮 -->
+        <Grid Grid.Row="2" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="150"/>
+                <ColumnDefinition Width="120"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <hc:CircleProgressBar Grid.Column="0" Value="{Binding ProgressValue, Mode=OneWay}"
-                                IsIndeterminate="{Binding IsProgressIndeterminate, Mode=OneWay}"
-                                ShowText="False" Height="24"/>
+            <ProgressBar Grid.Column="0" Value="{Binding ProgressValue, Mode=OneWay}"
+                             Maximum="100" Minimum="0"
+                             IsIndeterminate="{Binding IsProgressIndeterminate, Mode=OneWay}"
+                             Height="20" Margin="0,0,0,0"/>
             <TextBlock Grid.Column="1" Text="{Binding StatusMessage, Mode=OneWay}"
                        VerticalAlignment="Center" Margin="10,0,0,0"
                        TextTrimming="CharacterEllipsis"/>
+            <Button Grid.Column="2" x:Name="CancelButton" Content="取消"
+                    Style="{StaticResource ButtonDanger}" Width="60"/>
         </Grid>
 
         <!-- 日志区域 -->
-        <hc:Card Grid.Row="5" Padding="10">
+        <hc:Card Grid.Row="3" Padding="8">
             <ListBox ItemsSource="{Binding Logs}" BorderThickness="0"
-                     Background="Transparent" MaxHeight="200">
+                     Background="Transparent">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding Message}" TextWrapping="Wrap"
-                                   Foreground="{Binding IsError, Converter={StaticResource BoolToColorConverter}, FallbackValue=Black}"/>
+                                   Foreground="{Binding IsError, Converter={StaticResource BoolToColorConverter}, FallbackValue=Black}"
+                                   FontSize="12"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>

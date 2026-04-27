@@ -273,16 +273,23 @@ public partial class MainViewModel : ObservableObject
         var log = new LogEntry($"[{timestamp}] {(isError ? "X " : "")}{message}", isError);
 
         // 在 UI 线程添加
-        Application.Current?.Dispatcher.Invoke(() =>
+        try
         {
-            // 使用 Add 而非 Insert(0) 避免频繁重排，日志顺序通过 ItemsSource 反转显示
-            Logs.Add(log);
-            // 限制日志数量
-            while (Logs.Count > 1000)
+            Application.Current?.Dispatcher.Invoke(() =>
             {
-                Logs.RemoveAt(0);
-            }
-        });
+                // 使用 Add 而非 Insert(0) 避免频繁重排，日志顺序通过 ItemsSource 反转显示
+                Logs.Add(log);
+                // 限制日志数量
+                while (Logs.Count > 1000)
+                {
+                    Logs.RemoveAt(0);
+                }
+            });
+        }
+        catch (Exception)
+        {
+            // 忽略日志添加失败
+        }
     }
 }
 

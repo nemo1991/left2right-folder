@@ -26,7 +26,6 @@ public partial class YearFilterMigrationWindow : HandyControl.Controls.Window
         ScanButton.Click += ScanButton_Click;
         MigrateButton.Click += MigrateButton_Click;
         CancelButton.Click += CancelButton_Click;
-        BackButton.Click += BackButton_Click;
         YearListBox.SelectionChanged += YearListBox_SelectionChanged;
 
         SubscribeToLogCollection();
@@ -106,11 +105,6 @@ public partial class YearFilterMigrationWindow : HandyControl.Controls.Window
         _viewModel.Cancel();
     }
 
-    private void BackButton_Click(object sender, RoutedEventArgs e)
-    {
-        Close();
-    }
-
     private async Task ShowFolderDialogAsync(string type)
     {
         var dialog = new System.Windows.Forms.FolderBrowserDialog
@@ -159,7 +153,6 @@ public partial class YearFilterMigrationWindow : HandyControl.Controls.Window
         ScanButton.Click -= ScanButton_Click;
         MigrateButton.Click -= MigrateButton_Click;
         CancelButton.Click -= CancelButton_Click;
-        BackButton.Click -= BackButton_Click;
         YearListBox.SelectionChanged -= YearListBox_SelectionChanged;
     }
 }
