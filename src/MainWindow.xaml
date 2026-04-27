@@ -36,6 +36,7 @@
         </Style>
     </Window.Resources>
 
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -156,4 +157,5 @@
         <TextBlock Grid.Row="5" Text="提示：先选择原目录和目标目录，点击&apos;扫描目录&apos;进行对比，确认无误后点击&apos;开始迁移&apos;执行操作。"
                    Foreground="#666666" FontSize="12" Margin="0,10,0,0" TextWrapping="Wrap"/>
     </Grid>
+    </ScrollViewer>
 </Window>
