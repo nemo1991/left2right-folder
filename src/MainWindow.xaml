@@ -28,80 +28,84 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="70"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- 源目录 -->
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="原目录:" VerticalAlignment="Center"/>
-                <hc:TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SourceDirectory, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"/>
-                <Button Grid.Row="0" Grid.Column="2" x:Name="BrowseSourceButton" Content="浏览..."
-                        Width="70"/>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="原目录" VerticalAlignment="Center"  HorizontalAlignment="Right" Margin="5,0,0,0"/>
+                <hc:TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SourceDirectory, UpdateSourceTrigger=PropertyChanged}" Margin="5,5,0,5"/>
+                <Button Grid.Row="0" Grid.Column="2" x:Name="BrowseSourceButton" Content="浏览..." Margin="5" Width="70" />
 
                 <!-- 目标目录 -->
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="目标目录:" VerticalAlignment="Center" Margin="0,8,0,0"/>
-                <hc:TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TargetDirectory, UpdateSourceTrigger=PropertyChanged}" Margin="0,8,8,0"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="目标目录" VerticalAlignment="Center" HorizontalAlignment="Right"  Margin="5,0,0,0"/>
+                <hc:TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TargetDirectory, UpdateSourceTrigger=PropertyChanged}" Margin="5,5,0,5"/>
                 <Button Grid.Row="1" Grid.Column="2" x:Name="BrowseTargetButton" Content="浏览..."
-                        Width="70" Margin="0,8,0,0"/>
+                        Width="70" Margin="5"  />
             </Grid>
         </hc:Card>
 
-        <!-- 操作按钮区域 -->
-        <Grid Grid.Row="1" Margin="0,0,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <hc:Card Grid.Row="1" Margin="0,0,0,10" >
+            <!-- 操作按钮区域 -->
+            <Grid >
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="{DynamicResource SecondaryRegionBrush}"
-                    CornerRadius="4" Padding="12,6" Margin="0,0,10,0">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="已扫描:" Margin="0,0,12,0">
-                        <Run FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Text="{Binding TotalScanned, Mode=OneWay}"/>
-                    </TextBlock>
-                    <TextBlock Text="待删除:" Margin="0,0,12,0">
-                        <Run FontWeight="Bold" Foreground="#D13438" Text="{Binding ToDeleteCount, Mode=OneWay}"/>
-                    </TextBlock>
-                    <TextBlock Text="待移动:" Margin="0,0,12,0">
-                        <Run FontWeight="Bold" Foreground="#107C10" Text="{Binding ToMoveCount, Mode=OneWay}"/>
-                    </TextBlock>
-                    <TextBlock Text="冲突:">
-                        <Run FontWeight="Bold" Foreground="#FF6B00" Text="{Binding ConflictCount, Mode=OneWay}"/>
-                    </TextBlock>
-                </StackPanel>
-            </Border>
+                <Border Grid.Column="0" Background="{DynamicResource SecondaryRegionBrush}"
+               CornerRadius="4" Padding="12,6" Margin="5">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="已扫描:" Margin="0,0,12,0">
+                            <Run FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Text="{Binding TotalScanned, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock Text="待删除:" Margin="0,0,12,0">
+                   <Run FontWeight="Bold" Foreground="#D13438" Text="{Binding ToDeleteCount, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock Text="待移动:" Margin="0,0,12,0">
+                   <Run FontWeight="Bold" Foreground="#107C10" Text="{Binding ToMoveCount, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock Text="冲突:">
+                   <Run FontWeight="Bold" Foreground="#FF6B00" Text="{Binding ConflictCount, Mode=OneWay}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
 
-            <Button Grid.Column="1" x:Name="ScanButton" Content="{Binding ScanButtonContent, Mode=OneWay}"
-                    Style="{StaticResource ButtonPrimary}" Width="80" Margin="0,0,8,0"/>
-            <Button Grid.Column="2" x:Name="MigrateButton" Content="{Binding MigrateButtonContent, Mode=OneWay}"
-                    Style="{StaticResource ButtonSuccess}" Width="80" Margin="0,0,8,0"/>
-            <Button Grid.Column="3" x:Name="CancelButton" Content="取消"
-                    Style="{StaticResource ButtonDanger}" Width="60"/>
-        </Grid>
+                <Button Grid.Column="1" x:Name="ScanButton" Content="{Binding ScanButtonContent, Mode=OneWay}"
+               Style="{StaticResource ButtonPrimary}" Width="80" Margin="5"/>
+                <Button Grid.Column="2" x:Name="MigrateButton" Content="{Binding MigrateButtonContent, Mode=OneWay}"
+               Style="{StaticResource ButtonSuccess}" Width="80" Margin="5"/>
+                <Button Grid.Column="3" x:Name="CancelButton" Content="取消"
+               Style="{StaticResource ButtonDanger}" Width="80" Margin="5"/>
+            </Grid>
+        </hc:Card>
+
 
         <!-- 进度条 -->
-        <Grid Grid.Row="2" Margin="0,0,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="120"/>
-            </Grid.ColumnDefinitions>
+        <hc:Card Grid.Row="2"  Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <ProgressBar Grid.Column="0" Value="{Binding ProgressValue, Mode=OneWay}"
-                             Maximum="100" Minimum="0"
-                             IsIndeterminate="{Binding IsProgressIndeterminate, Mode=OneWay}"
-                             Height="20" Margin="0,0,0,0"/>
-            <TextBlock Grid.Column="1" Text="{Binding StatusMessage, Mode=OneWay}"
-                       VerticalAlignment="Center" Margin="10,0,0,0"
-                       TextTrimming="CharacterEllipsis"/>
-        </Grid>
+                <ProgressBar Grid.Column="0" Value="{Binding ProgressValue, Mode=OneWay}"
+                     IsIndeterminate="{Binding IsProgressIndeterminate, Mode=OneWay}"
+                      Margin="5"/>
+                <TextBlock Grid.Column="1" Text="{Binding StatusMessage, Mode=OneWay}"
+               VerticalAlignment="Center" Width="270"
+               TextTrimming="CharacterEllipsis" Grid.ColumnSpan="2"/>
+            </Grid>
+        </hc:Card>
+           
 
         <!-- 日志区域 -->
         <hc:Card Grid.Row="3" Padding="8">
             <ListBox x:Name="LogListBox" ItemsSource="{Binding Logs}" BorderThickness="0"
-                     Background="Transparent">
+                     Background="Transparent" d:ItemsSource="{d:SampleData ItemCount=5}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding Message}" TextWrapping="Wrap"
