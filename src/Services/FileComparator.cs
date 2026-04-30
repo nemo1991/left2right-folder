@@ -15,6 +15,7 @@ public interface IFileComparator
 {
     Task<file_sync.Models.CompareResult> CompareAsync(
         List<FileEntry> sourceFiles,
+        string sourceDirectory,
         string targetDirectory,
         IHashCalculator hashCalculator,
         IProgress<string>? progress = null,
@@ -28,6 +29,7 @@ public class FileComparator : IFileComparator
 {
     public Task<file_sync.Models.CompareResult> CompareAsync(
         List<FileEntry> sourceFiles,
+        string sourceDirectory,
         string targetDirectory,
         IHashCalculator hashCalculator,
         IProgress<string>? progress = null,
@@ -45,7 +47,8 @@ public class FileComparator : IFileComparator
             {
                 ct.ThrowIfCancellationRequested();
 
-                var targetPath = Path.Combine(targetDirectory, sourceFile.FileName);
+                var relativePath = Path.GetRelativePath(sourceDirectory, sourceFile.FullPath);
+                var targetPath = Path.Combine(targetDirectory, relativePath);
                 var targetExists = File.Exists(targetPath);
 
                 if (targetExists)

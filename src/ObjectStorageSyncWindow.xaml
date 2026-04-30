@@ -105,11 +105,14 @@
                     </StackPanel>
 
                     <Button Grid.Column="1" x:Name="ScanButton" Content="{Binding ScanButtonContent, Mode=OneWay}"
-                            Style="{StaticResource ButtonPrimary}" Width="80" Margin="0,0,8,0"/>
+                            Style="{StaticResource ButtonPrimary}" Width="80" Margin="0,0,8,0"
+                            IsEnabled="{Binding CanScan, Mode=OneWay}"/>
                     <Button Grid.Column="2" x:Name="SyncButton" Content="{Binding SyncButtonContent, Mode=OneWay}"
-                            Style="{StaticResource ButtonSuccess}" Width="80" Margin="0,0,8,0"/>
+                            Style="{StaticResource ButtonSuccess}" Width="80" Margin="0,0,8,0"
+                            IsEnabled="{Binding CanSync, Mode=OneWay}"/>
                     <Button Grid.Column="3" x:Name="CancelButton" Content="取消"
-                            Style="{StaticResource ButtonDanger}" Width="60"/>
+                            Style="{StaticResource ButtonDanger}" Width="60"
+                            IsEnabled="{Binding CanCancel, Mode=OneWay}"/>
                 </Grid>
             </Grid>
         </hc:Card>

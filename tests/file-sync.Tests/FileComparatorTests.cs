@@ -37,7 +37,7 @@ public class FileComparatorTests : IDisposable
 
         var comparator = new FileComparator();
         var hashCalc = new HashCalculator();
-        var result = await comparator.CompareAsync(sourceFiles, _targetDir, hashCalc);
+        var result = await comparator.CompareAsync(sourceFiles, _sourceDir, _targetDir, hashCalc);
 
         Assert.Single(result.ToDelete);
         Assert.Empty(result.ToMove);
@@ -58,7 +58,7 @@ public class FileComparatorTests : IDisposable
 
         var comparator = new FileComparator();
         var hashCalc = new HashCalculator();
-        var result = await comparator.CompareAsync(sourceFiles, _targetDir, hashCalc);
+        var result = await comparator.CompareAsync(sourceFiles, _sourceDir, _targetDir, hashCalc);
 
         Assert.Empty(result.ToDelete);
         Assert.Empty(result.ToMove);
@@ -78,7 +78,7 @@ public class FileComparatorTests : IDisposable
 
         var comparator = new FileComparator();
         var hashCalc = new HashCalculator();
-        var result = await comparator.CompareAsync(sourceFiles, _targetDir, hashCalc);
+        var result = await comparator.CompareAsync(sourceFiles, _sourceDir, _targetDir, hashCalc);
 
         Assert.Empty(result.ToDelete);
         Assert.Single(result.ToMove);
@@ -108,7 +108,7 @@ public class FileComparatorTests : IDisposable
 
         var comparator = new FileComparator();
         var hashCalc = new HashCalculator();
-        var result = await comparator.CompareAsync(sourceFiles, _targetDir, hashCalc);
+        var result = await comparator.CompareAsync(sourceFiles, _sourceDir, _targetDir, hashCalc);
 
         Assert.Single(result.ToDelete);
         Assert.Single(result.ToMove);
@@ -121,7 +121,7 @@ public class FileComparatorTests : IDisposable
         var sourceFiles = new List<FileEntry>();
         var comparator = new FileComparator();
         var hashCalc = new HashCalculator();
-        var result = await comparator.CompareAsync(sourceFiles, _targetDir, hashCalc);
+        var result = await comparator.CompareAsync(sourceFiles, _sourceDir, _targetDir, hashCalc);
 
         Assert.Empty(result.ToDelete);
         Assert.Empty(result.ToMove);
@@ -144,7 +144,7 @@ public class FileComparatorTests : IDisposable
 
         var comparator = new FileComparator();
         var hashCalc = new HashCalculator();
-        var result = await comparator.CompareAsync(sourceFiles, _targetDir, hashCalc);
+        var result = await comparator.CompareAsync(sourceFiles, _sourceDir, _targetDir, hashCalc);
 
         var deleted = result.ToDelete[0];
         Assert.Equal("match.txt", deleted.SourceFile.FileName);
@@ -164,6 +164,6 @@ public class FileComparatorTests : IDisposable
         var hashCalc = new HashCalculator();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => comparator.CompareAsync(sourceFiles, _targetDir, hashCalc, null, cts.Token));
+            () => comparator.CompareAsync(sourceFiles, _sourceDir, _targetDir, hashCalc, null, cts.Token));
     }
 }

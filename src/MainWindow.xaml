@@ -75,11 +75,14 @@
                 </Border>
 
                 <Button Grid.Column="1" x:Name="ScanButton" Content="{Binding ScanButtonContent, Mode=OneWay}"
-               Style="{StaticResource ButtonPrimary}" Width="80" Margin="5"/>
+               Style="{StaticResource ButtonPrimary}" Width="80" Margin="5"
+               IsEnabled="{Binding CanScan, Mode=OneWay}"/>
                 <Button Grid.Column="2" x:Name="MigrateButton" Content="{Binding MigrateButtonContent, Mode=OneWay}"
-               Style="{StaticResource ButtonSuccess}" Width="80" Margin="5"/>
+               Style="{StaticResource ButtonSuccess}" Width="80" Margin="5"
+               IsEnabled="{Binding CanMigrate, Mode=OneWay}"/>
                 <Button Grid.Column="3" x:Name="CancelButton" Content="取消"
-               Style="{StaticResource ButtonDanger}" Width="80" Margin="5"/>
+               Style="{StaticResource ButtonDanger}" Width="80" Margin="5"
+               IsEnabled="{Binding CanCancel, Mode=OneWay}"/>
             </Grid>
         </hc:Card>
 

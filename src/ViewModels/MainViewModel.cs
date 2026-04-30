@@ -135,7 +135,7 @@ public partial class MainViewModel : ObservableObject
             {
                 AddLog(msg);
             });
-            _compareResult = await _fileComparator.CompareAsync(_sourceFiles, TargetDirectory, _hashCalculator, compareProgress, ct);
+            _compareResult = await _fileComparator.CompareAsync(_sourceFiles, SourceDirectory, TargetDirectory, _hashCalculator, compareProgress, ct);
 
             ToDeleteCount = _compareResult.ToDelete.Count;
             ToMoveCount = _compareResult.ToMove.Count;
@@ -225,13 +225,13 @@ public partial class MainViewModel : ObservableObject
             );
 
             var reportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                $"迁移报告_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+                $"文件迁移报告_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
             await _reportGenerator.GenerateCsvAsync(report, reportPath);
 
             StatusMessage = $"迁移完成 - 删除：{result.DeletedCount}, 移动：{result.MigratedCount}, 冲突：{_conflicts.Count}, 错误：{result.ErrorCount}";
             MigrateButtonContent = "迁移完成";
             CanScan = true;
-            CanMigrate = true;
+            CanMigrate = false;
             CanCancel = false;
 
             AddLog($"迁移完成！报告已保存到：{reportPath}");

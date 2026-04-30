@@ -102,8 +102,10 @@
                                hc:InfoElement.Placeholder="如 *.jpg, *.png"/>
                     <CheckBox Grid.Column="2" IsChecked="{Binding UseTrieScan}" Content="前缀树扫描"
                               Margin="15,0,0,0" VerticalAlignment="Center"/>
-                    <Button Grid.Column="3" x:Name="ListButton" Content="列出文件" Width="80" Margin="15,0,0,0"/>
-                    <Button Grid.Column="4" x:Name="DownloadButton" Content="下载" Width="70" Margin="8,0,0,0"/>
+                    <Button Grid.Column="3" x:Name="ListButton" Content="列出文件" Width="80" Margin="15,0,0,0"
+                            IsEnabled="{Binding CanList, Mode=OneWay}"/>
+                    <Button Grid.Column="4" x:Name="DownloadButton" Content="下载" Width="70" Margin="8,0,0,0"
+                            IsEnabled="{Binding CanDownload, Mode=OneWay}"/>
                 </Grid>
             </Grid>
         </hc:Card>
@@ -123,7 +125,8 @@
                        VerticalAlignment="Center" Margin="10,0,0,0"
                        TextTrimming="CharacterEllipsis"/>
             <Button Grid.Column="2" x:Name="CancelButton" Content="取消"
-                    Style="{StaticResource ButtonDanger}" Width="60"/>
+                    Style="{StaticResource ButtonDanger}" Width="60"
+                    IsEnabled="{Binding CanCancel, Mode=OneWay}"/>
         </Grid>
 
         <!-- 日志区域 -->
