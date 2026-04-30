@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -46,7 +45,6 @@ public class CsvReportGenerator : IReportGenerator
             sb.AppendLine($"删除文件数：{report.DeletedCount}");
             sb.AppendLine($"迁移文件数：{report.MigratedCount}");
             sb.AppendLine($"冲突文件数：{report.ConflictCount}");
-            sb.AppendLine($"跳过文件数：{report.SkippedCount}");
             sb.AppendLine($"错误数：{report.ErrorCount}");
 
             File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);

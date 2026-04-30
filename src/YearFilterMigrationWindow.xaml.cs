@@ -5,7 +5,6 @@ using System.Collections.Specialized;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
-using HandyControl.Controls;
 using file_sync.ViewModels;
 
 namespace file_sync;

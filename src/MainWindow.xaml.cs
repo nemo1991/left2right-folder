@@ -4,7 +4,6 @@ using System.Collections.Specialized;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
-using HandyControl.Controls;
 using file_sync.Services;
 using file_sync.ViewModels;
 
@@ -21,17 +20,15 @@ public partial class MainWindow : HandyControl.Controls.Window
         var fileComparator = new FileComparator();
         var fileMigrator = new FileMigrator();
         var reportGenerator = new CsvReportGenerator();
-        var appState = new AppState();
 
-        _ = appState.InitializeAsync();
 
         _viewModel = new MainViewModel(
             fileScanner,
             hashCalculator,
             fileComparator,
             fileMigrator,
-            reportGenerator,
-            appState);
+            reportGenerator
+            );
 
         InitializeComponent();
         DataContext = _viewModel;

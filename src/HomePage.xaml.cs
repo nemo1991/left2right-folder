@@ -1,5 +1,4 @@
 using System.Windows;
-using HandyControl.Controls;
 
 namespace file_sync;
 

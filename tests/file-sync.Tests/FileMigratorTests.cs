@@ -65,7 +65,7 @@ public class FileMigratorTests : IDisposable
         var result = await migrator.MigrateAsync(toDelete, [], [], _sourceDir, _targetDir);
 
         Assert.Equal(0, result.DeletedCount);
-        Assert.Equal(1, result.SkippedCount);
+        Assert.Equal(1, result.ConfilctCount);
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public class FileMigratorTests : IDisposable
         var migrator = new FileMigrator();
         var result = await migrator.MigrateAsync([], [], conflicts, _sourceDir, _targetDir);
 
-        Assert.Equal(1, result.SkippedCount);
+        Assert.Equal(1, result.ConfilctCount);
         var conflictDetail = result.Details.First(d => d.Operation == "Conflict");
         Assert.Equal("Skipped", conflictDetail.Status);
         Assert.Contains("冲突", conflictDetail.ErrorMessage);
@@ -183,7 +183,7 @@ public class FileMigratorTests : IDisposable
 
         Assert.Equal(1, result.DeletedCount);
         Assert.Equal(1, result.MigratedCount);
-        Assert.Equal(1, result.SkippedCount); // 1 conflict, delete and move succeeded
+        Assert.Equal(1, result.ConfilctCount); // 1 conflict, delete and move succeeded
         Assert.Equal(0, result.ErrorCount);
         Assert.Equal(3, result.Details.Count); // 1 delete + 1 move + 1 conflict
     }

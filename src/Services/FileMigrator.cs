@@ -25,7 +25,7 @@ public interface IFileMigrator
 public record MigrationResult(
     int DeletedCount,
     int MigratedCount,
-    int SkippedCount,
+    int ConfilctCount,
     int ErrorCount,
     List<MigrationDetail> Details
 );
@@ -69,6 +69,10 @@ public class FileMigrator : IFileMigrator
                     0, "", default, default, default
                 ));
             }
+
+            // 每50个文件报告一次进度，减少UI线程负担
+            int progressCounter = 0;
+            int totalFiles = toDelete.Count + toMove.Count + conflicts.Count;
 
             // 先执行删除操作
             foreach (var fileEntry in toDelete)
@@ -116,7 +120,8 @@ public class FileMigrator : IFileMigrator
                     ));
                 }
 
-                progress?.Report(new MigrationProgress(file.FullPath, deletedCount + migratedCount, toDelete.Count + toMove.Count + conflicts.Count, "删除"));
+                if (++progressCounter % 50 == 0 || progressCounter == 1 || progressCounter == totalFiles)
+                    progress?.Report(new MigrationProgress(file.FullPath, deletedCount + migratedCount, totalFiles, "删除"));
             }
 
             // 执行移动操作
@@ -161,6 +166,10 @@ public class FileMigrator : IFileMigrator
                         0, "", default, default, default
                     ));
                 }
+                catch (Exception ex) when (ct.IsCancellationRequested)
+                {
+                    return new MigrationResult(deletedCount, migratedCount, skippedCount, errorCount, details);
+                }
                 catch (Exception ex)
                 {
                     errorCount++;
@@ -170,7 +179,8 @@ public class FileMigrator : IFileMigrator
                     ));
                 }
 
-                progress?.Report(new MigrationProgress(file.FullPath, deletedCount + migratedCount, toDelete.Count + toMove.Count + conflicts.Count, "移动"));
+                if (++progressCounter % 50 == 0 || progressCounter == 1 || progressCounter == totalFiles)
+                    progress?.Report(new MigrationProgress(file.FullPath, deletedCount + migratedCount, totalFiles, "移动"));
             }
 
             return new MigrationResult(deletedCount, migratedCount, skippedCount, errorCount, details);

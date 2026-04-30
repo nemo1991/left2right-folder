@@ -22,24 +22,33 @@ public class HashCalculator : IHashCalculator
 
     public async Task<string> ComputeHashAsync(string filePath, IProgress<double>? progress = null, CancellationToken ct = default)
     {
-        return await Task.Run(() =>
+        try
         {
-            using var md5 = System.Security.Cryptography.MD5.Create();
-            using var stream = File.OpenRead(filePath);
-            var buffer = new byte[BufferSize];
-            long totalRead = 0;
-
-            int bytesRead;
-            while ((bytesRead = stream.Read(buffer, 0, BufferSize)) > 0)
+            return await Task.Run(() =>
             {
-                ct.ThrowIfCancellationRequested();
-                md5.TransformBlock(buffer, 0, bytesRead, null, 0);
-                totalRead += bytesRead;
-                progress?.Report((double)totalRead / stream.Length * 100);
-            }
+                using var md5 = System.Security.Cryptography.MD5.Create();
+                using var stream = File.OpenRead(filePath);
+                var buffer = new byte[BufferSize];
+                long totalRead = 0;
 
-            md5.TransformFinalBlock(buffer, 0, 0);
-            return BitConverter.ToString(md5.Hash!).Replace("-", "").ToLower();
-        }, ct);
+                int bytesRead;
+                while ((bytesRead = stream.Read(buffer, 0, BufferSize)) > 0)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    md5.TransformBlock(buffer, 0, bytesRead, null, 0);
+                    totalRead += bytesRead;
+                    progress?.Report((double)totalRead / stream.Length * 100);
+                }
+
+                md5.TransformFinalBlock(buffer, 0, 0);
+                return BitConverter.ToString(md5.Hash!).Replace("-", "").ToLower();
+            }, ct);
+        }
+        catch (AggregateException ae)
+        {
+            if (ae.InnerException is OperationCanceledException)
+                throw ae.InnerException;
+            throw;
+        }
     }
 }

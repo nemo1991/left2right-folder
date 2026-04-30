@@ -516,12 +516,12 @@ public partial class YearFilterMigrationViewModel : ObservableObject
 
         try
         {
-            Application.Current?.Dispatcher.Invoke(() =>
+            Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
             {
                 Logs.Add(log);
                 while (Logs.Count > 1000)
                     Logs.RemoveAt(0);
-            });
+            }));
         }
         catch (Exception)
         {

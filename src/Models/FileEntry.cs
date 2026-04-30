@@ -60,7 +60,6 @@ public record MigrationReport(
     int TotalScanned,
     int DeletedCount,
     int MigratedCount,
-    int SkippedCount,
     int ErrorCount,
     int ConflictCount,
     List<MigrationDetail> Details

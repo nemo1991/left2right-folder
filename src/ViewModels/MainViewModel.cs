@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
@@ -17,12 +18,10 @@ public partial class MainViewModel : ObservableObject
     private readonly IFileComparator _fileComparator;
     private readonly IFileMigrator _fileMigrator;
     private readonly IReportGenerator _reportGenerator;
-    private readonly IAppState _appState;
 
     private CancellationTokenSource? _cts;
-    private System.Collections.Generic.List<FileEntry> _sourceFiles = new();
-    private file_sync.Models.CompareResult? _compareResult;
-    private string? _sessionId;
+    private List<FileEntry> _sourceFiles = new();
+    private CompareResult? _compareResult;
 
     [ObservableProperty] private string _sourceDirectory = "";
     [ObservableProperty] private string _targetDirectory = "";
@@ -41,22 +40,20 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private int _conflictCount;
     [ObservableProperty] private ObservableCollection<LogEntry> _logs = new();
 
-    private System.Collections.Generic.List<FileEntry> _conflicts = new();
 
     public MainViewModel(
         IFileScanner fileScanner,
         IHashCalculator hashCalculator,
         IFileComparator fileComparator,
         IFileMigrator fileMigrator,
-        IReportGenerator reportGenerator,
-        IAppState appState)
+        IReportGenerator reportGenerator
+        )
     {
         _fileScanner = fileScanner;
         _hashCalculator = hashCalculator;
         _fileComparator = fileComparator;
         _fileMigrator = fileMigrator;
         _reportGenerator = reportGenerator;
-        _appState = appState;
     }
 
     partial void OnSourceDirectoryChanged(string value)
@@ -115,9 +112,6 @@ public partial class MainViewModel : ObservableObject
             ToMoveCount = 0;
             ConflictCount = 0;
 
-            // 生成会话 ID
-            _sessionId = Guid.NewGuid().ToString();
-            await _appState.SaveScanSessionAsync(_sessionId, SourceDirectory, TargetDirectory);
 
             // 扫描源目录
             var sourceProgress = new Progress<string>(file =>
@@ -139,8 +133,8 @@ public partial class MainViewModel : ObservableObject
 
             ToDeleteCount = _compareResult.ToDelete.Count;
             ToMoveCount = _compareResult.ToMove.Count;
-            _conflicts = _compareResult.Conflicts;
-            ConflictCount = _conflicts.Count;
+            //_conflicts = _compareResult.Conflicts;
+            ConflictCount = _compareResult.Conflicts.Count;
 
             StatusMessage = $"扫描完成 - 待删除：{ToDeleteCount}, 待移动：{ToMoveCount}, 冲突：{ConflictCount}";
             ScanButtonContent = "重新扫描";
@@ -177,6 +171,7 @@ public partial class MainViewModel : ObservableObject
 
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
+        MigrationResult? result = null;
 
         try
         {
@@ -191,7 +186,7 @@ public partial class MainViewModel : ObservableObject
             var progress = new Progress<MigrationProgress>(p =>
             {
                 // 进度条每 50 个文件更新一次，避免 UI 过载
-                if (p.Completed % 50 == 0 || p.Completed == p.Total)
+                if (p.Completed % 50 == 0 || p.Completed == 1 || p.Completed == p.Total)
                 {
                     ProgressValue = (double)p.Completed / p.Total * 100;
                     StatusMessage = $"{p.Operation}: {p.Completed}/{p.Total}";
@@ -200,10 +195,10 @@ public partial class MainViewModel : ObservableObject
                 AddLog($"{p.Operation}: {Path.GetFileName(p.CurrentFile)}");
             });
 
-            var result = await _fileMigrator.MigrateAsync(
+            result = await _fileMigrator.MigrateAsync(
                 _compareResult.ToDelete,
                 _compareResult.ToMove,
-                _conflicts,
+                _compareResult.Conflicts,
                 SourceDirectory,
                 TargetDirectory,
                 progress,
@@ -218,9 +213,8 @@ public partial class MainViewModel : ObservableObject
                 TotalScanned,
                 result.DeletedCount,
                 result.MigratedCount,
-                result.SkippedCount,
                 result.ErrorCount,
-                _conflicts.Count,
+                result.ConfilctCount,
                 result.Details
             );
 
@@ -228,7 +222,7 @@ public partial class MainViewModel : ObservableObject
                 $"文件迁移报告_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
             await _reportGenerator.GenerateCsvAsync(report, reportPath);
 
-            StatusMessage = $"迁移完成 - 删除：{result.DeletedCount}, 移动：{result.MigratedCount}, 冲突：{_conflicts.Count}, 错误：{result.ErrorCount}";
+            StatusMessage = $"迁移完成 - 删除：{result.DeletedCount}, 移动：{result.MigratedCount}, 冲突：{result.ConfilctCount}, 错误：{result.ErrorCount}";
             MigrateButtonContent = "迁移完成";
             CanScan = true;
             CanMigrate = false;
@@ -236,11 +230,6 @@ public partial class MainViewModel : ObservableObject
 
             AddLog($"迁移完成！报告已保存到：{reportPath}");
 
-            // 标记会话完成
-            if (_sessionId != null)
-            {
-                await _appState.MarkSessionCompletedAsync(_sessionId);
-            }
         }
         catch (OperationCanceledException)
         {
@@ -249,6 +238,29 @@ public partial class MainViewModel : ObservableObject
             CanMigrate = true;
             CanScan = true;
             CanCancel = false;
+            AddLog("迁移已取消");
+
+            // 生成取消前的操作报告
+            try
+            {
+                var cancelledReport = new MigrationReport(
+                    DateTime.Now,
+                    DateTime.Now,
+                    SourceDirectory,
+                    TargetDirectory,
+                    TotalScanned,
+                    result?.DeletedCount ?? 0,
+                    result?.MigratedCount ?? 0,
+                    result?.ErrorCount ?? 0,
+                     result?.ConfilctCount ?? 0,
+                    result?.Details ?? new List<MigrationDetail>()
+                );
+                var reportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                    $"文件迁移报告_已取消_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+                await _reportGenerator.GenerateCsvAsync(cancelledReport, reportPath);
+                AddLog($"取消报告已保存到：{reportPath}");
+            }
+            catch { }
         }
         catch (Exception ex)
         {
@@ -275,16 +287,14 @@ public partial class MainViewModel : ObservableObject
         // 在 UI 线程添加
         try
         {
-            Application.Current?.Dispatcher.Invoke(() =>
+            Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
             {
-                // 使用 Add 而非 Insert(0) 避免频繁重排，日志顺序通过 ItemsSource 反转显示
                 Logs.Add(log);
-                // 限制日志数量
                 while (Logs.Count > 1000)
                 {
                     Logs.RemoveAt(0);
                 }
-            });
+            }));
         }
         catch (Exception)
         {

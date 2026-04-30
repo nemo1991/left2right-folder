@@ -26,7 +26,6 @@ public class CsvReportGeneratorTests : IDisposable
             @"C:\source",
             @"C:\target",
             100,
-            50,
             30,
             10,
             5,

@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using HandyControl.Controls;
 using file_sync.ViewModels;
 
 namespace file_sync;
