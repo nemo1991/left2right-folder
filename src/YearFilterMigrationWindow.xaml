@@ -37,30 +37,30 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- 源目录 -->
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="源目录:" VerticalAlignment="Center"/>
-                <hc:TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SourceDirectory, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"/>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="源目录:" VerticalAlignment="Center" Margin="5"/>
+                <hc:TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SourceDirectory, UpdateSourceTrigger=PropertyChanged}" Margin="5"/>
                 <Button Grid.Row="0" Grid.Column="2" x:Name="BrowseSourceButton" Content="浏览..."
-                        Width="70" Margin="0,0,15,0"/>
+                        Width="70" Margin="5"/>
 
                 <!-- 年份选择 -->
-                <TextBlock Grid.Row="0" Grid.Column="3" Text="迁移年份:" VerticalAlignment="Center"/>
+                <TextBlock Grid.Row="0" Grid.Column="3" Text="迁移年份:" VerticalAlignment="Center" Margin="5"/>
                 <StackPanel Grid.Row="0" Grid.Column="4" Orientation="Horizontal">
                     <hc:TextBox x:Name="YearTextBox" Text="{Binding YearText, UpdateSourceTrigger=PropertyChanged}"
-                               FontSize="14" FontWeight="Bold" MaxLength="4" Width="80"/>
-                    <Button x:Name="YearDropdownButton" Width="28" Height="28" Margin="4,0,0,0"
+                               FontSize="14" FontWeight="Bold" MaxLength="4" Width="80" Margin="5"/>
+                    <Button x:Name="YearDropdownButton" Width="28" Height="28" Margin="5"
                             Click="YearDropdownButton_Click">
                         <Path Data="M0,0 L10,0 L5,8 Z" Fill="{DynamicResource PrimaryBrush}"
                               Width="10" Height="8" Stretch="Fill"/>
                     </Button>
-                    <TextBlock Text="{Binding YearInfoText}" VerticalAlignment="Center" Margin="10,0,0,0"
-                               Foreground="{Binding YearValidationColor}" FontSize="12"/>
+                    <TextBlock Text="{Binding YearInfoText}" VerticalAlignment="Center"
+                               Foreground="{Binding YearValidationColor}" FontSize="12" Margin="5"/>
                 </StackPanel>
 
                 <!-- 目标目录 -->
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="目标目录:" VerticalAlignment="Center" Margin="0,8,0,0"/>
-                <hc:TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TargetDirectory, UpdateSourceTrigger=PropertyChanged}" Margin="0,8,8,0"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="目标目录:" VerticalAlignment="Center" Margin="5"/>
+                <hc:TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TargetDirectory, UpdateSourceTrigger=PropertyChanged}" Margin="5"/>
                 <Button Grid.Row="1" Grid.Column="2" x:Name="BrowseTargetButton" Content="浏览..."
-                        Width="70" Margin="0,8,15,0"/>
+                        Width="70" Margin="5"/>
             </Grid>
         </hc:Card>
 
@@ -87,7 +87,7 @@
         </Popup>
 
         <!-- 操作按钮区域 -->
-        <Grid Grid.Row="1" Margin="0,0,0,10">
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -96,7 +96,7 @@
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Background="{DynamicResource SecondaryRegionBrush}"
-                    CornerRadius="4" Padding="12,6" Margin="0,0,10,0">
+                    CornerRadius="4" Padding="12,6" Margin="5">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="待迁移:" Margin="0,0,10,0">
                         <Run FontWeight="Bold" Foreground="{DynamicResource SuccessBrush}" Text="{Binding ToMoveCount, Mode=OneWay}"/>
@@ -114,27 +114,29 @@
             </Border>
 
             <Button Grid.Column="1" x:Name="ScanButton" Content="{Binding ScanButtonContent, Mode=OneWay}"
-                    Style="{StaticResource ButtonPrimary}" Width="80" Margin="0,0,8,0"/>
+                    Style="{StaticResource ButtonPrimary}" Width="80" Margin="5"/>
             <Button Grid.Column="2" x:Name="MigrateButton" Content="{Binding MigrateButtonContent, Mode=OneWay}"
-                    Style="{StaticResource ButtonSuccess}" Width="80" Margin="0,0,8,0"/>
+                    Style="{StaticResource ButtonSuccess}" Width="80" Margin="5"/>
             <Button Grid.Column="3" x:Name="CancelButton" Content="取消"
-                    Style="{StaticResource ButtonDanger}" Width="60"/>
+                    Style="{StaticResource ButtonDanger}" Width="80" Margin="5"/>
         </Grid>
 
         <!-- 进度条 -->
-        <Grid Grid.Row="2" Margin="0,0,0,10">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="120"/>
+                <ColumnDefinition Width="270"/>
             </Grid.ColumnDefinitions>
 
             <ProgressBar Grid.Column="0" Value="{Binding ProgressValue, Mode=OneWay}"
-                             Maximum="100" Minimum="0"
-                             IsIndeterminate="{Binding IsProgressIndeterminate, Mode=OneWay}"
-                             Height="20" Margin="0,0,0,0"/>
+                 Maximum="100" Minimum="0"
+                 IsIndeterminate="{Binding IsProgressIndeterminate, Mode=OneWay}"
+                 Height="20" Margin="5"/>
+
             <TextBlock Grid.Column="1" Text="{Binding StatusMessage, Mode=OneWay}"
-                       VerticalAlignment="Center" Margin="10,0,0,0"
+                       VerticalAlignment="Center" Margin="5"
                        TextTrimming="CharacterEllipsis"/>
+            
         </Grid>
 
         <!-- 日志区域 -->

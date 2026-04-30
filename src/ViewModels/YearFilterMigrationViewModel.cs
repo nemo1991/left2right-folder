@@ -19,7 +19,7 @@ public partial class YearFilterMigrationViewModel : ObservableObject
     private int _parsedYear;
     private readonly List<MigrationRecord> _migrationRecords = new();
 
-    private record MigrationRecord(string SourcePath, string TargetPath, long Size, string Status, string? ErrorMessage);
+    private record MigrationRecord(string SourcePath, string TargetPath, long Size, string Hash, string Status, string? ErrorMessage);
 
     [ObservableProperty] private string _sourceDirectory = "";
     [ObservableProperty] private string _targetDirectory = "";
@@ -45,7 +45,13 @@ public partial class YearFilterMigrationViewModel : ObservableObject
     public bool IsYearValid => _parsedYear > 0;
     public int ParsedYear => _parsedYear;
 
-    partial void OnYearTextChanged(string value)
+    public YearFilterMigrationViewModel()
+    {
+        // 初始化年份显示
+        ValidateYear(_yearText);
+    }
+
+    private void ValidateYear(string value)
     {
         if (int.TryParse(value, out int year) && year >= 1970 && year <= 2100)
         {
@@ -65,8 +71,12 @@ public partial class YearFilterMigrationViewModel : ObservableObject
             YearInfoText = "";
             YearValidationColor = Brushes.Gray;
         }
-
         UpdateCanScan();
+    }
+
+    partial void OnYearTextChanged(string value)
+    {
+        ValidateYear(value);
     }
 
     partial void OnSourceDirectoryChanged(string value)
@@ -173,32 +183,64 @@ public partial class YearFilterMigrationViewModel : ObservableObject
             _filesToMove.Clear();
             ResetState();
 
-            var allFiles = Directory.EnumerateFiles(SourceDirectory, "*.*", SearchOption.AllDirectories);
-            int totalCount = 0;
-            long totalSize = 0;
-
-            foreach (var filePath in allFiles)
+            var progress = new Progress<(string? fileName, int count)>(p =>
             {
-                ct.ThrowIfCancellationRequested();
+                if (p.fileName != null)
+                    StatusMessage = $"正在扫描：{p.fileName}";
+            });
 
-                try
+            // 在后台线程执行扫描
+            var (files, totalCount, totalSize, accessDeniedDirs) = await Task.Run(() =>
+            {
+                var filesToMove = new List<FileInfo>();
+                var accessDenied = new List<string>();
+                var allFiles = Directory.EnumerateFiles(SourceDirectory, "*.*", SearchOption.AllDirectories);
+                int count = 0;
+                long size = 0;
+                int fileNameUpdateCounter = 0;
+
+                foreach (var filePath in allFiles)
                 {
-                    var info = new FileInfo(filePath);
-                    if ((info.Attributes & FileAttributes.System) != 0)
-                        continue;
+                    ct.ThrowIfCancellationRequested();
 
-                    if (info.LastWriteTime.Year == _parsedYear)
+                    try
                     {
-                        _filesToMove.Add(info);
-                        totalSize += info.Length;
-                    }
+                        var info = new FileInfo(filePath);
+                        if ((info.Attributes & FileAttributes.System) != 0)
+                            continue;
 
-                    totalCount++;
+                        if (info.LastWriteTime.Year == _parsedYear)
+                        {
+                            filesToMove.Add(info);
+                            size += info.Length;
+                        }
+
+                        count++;
+                        fileNameUpdateCounter++;
+                        if (fileNameUpdateCounter % 100 == 0)
+                        {
+                            ((IProgress<(string?, int)>)progress).Report((Path.GetFileName(filePath), count));
+                        }
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        var dir = Path.GetDirectoryName(filePath);
+                        if (!string.IsNullOrEmpty(dir) && !accessDenied.Contains(dir))
+                            accessDenied.Add(dir);
+                    }
+                    catch (IOException) { }
                 }
-                catch (UnauthorizedAccessException) { }
-                catch (IOException) { }
+
+                return (filesToMove, count, size, accessDenied);
+            }, ct);
+
+            // 提示无权限的目录
+            if (accessDeniedDirs.Count > 0)
+            {
+                AddLog($"警告：无法访问 {accessDeniedDirs.Count} 个目录或文件，部分内容可能未扫描", true);
             }
 
+            _filesToMove = files;
             ToMoveCount = _filesToMove.Count;
             TotalSizeText = FormatSize(totalSize);
             TotalSizeVisibility = Visibility.Visible;
@@ -268,85 +310,100 @@ public partial class YearFilterMigrationViewModel : ObservableObject
                 AddLog($"创建目录：{yearSubDir}");
             }
 
-            int movedCount = 0;
-            int skippedCount = 0;
-            int errorCount = 0;
             int total = _filesToMove.Count;
             _migrationRecords.Clear();
 
-            for (int i = 0; i < total; i++)
+            var progress = new Progress<(int index, string message, bool isError, MigrationRecord? record)>(p =>
             {
-                ct.ThrowIfCancellationRequested();
+                if (p.record != null)
+                    _migrationRecords.Add(p.record);
+                ProgressValue = (double)(p.index + 1) / total * 100;
+                StatusMessage = $"已处理 {p.index + 1}/{total}";
+                if (!string.IsNullOrEmpty(p.message))
+                    AddLog(p.message, p.isError);
+            });
 
-                var file = _filesToMove[i];
-                var targetPath = Path.Combine(yearSubDir, file.Name);
-
-                try
+            // 在后台线程执行迁移
+            await Task.Run(() =>
+            {
+                for (int i = 0; i < total; i++)
                 {
-                    if (!File.Exists(file.FullName))
-                    {
-                        _migrationRecords.Add(new MigrationRecord(file.FullName, "", file.Length, "跳过", "文件不存在"));
-                        skippedCount++;
-                        AddLog($"跳过（文件不存在）：{file.Name}");
-                        continue;
-                    }
+                    ct.ThrowIfCancellationRequested();
 
-                    if (File.Exists(targetPath))
+                    var file = _filesToMove[i];
+                    var targetPath = Path.Combine(yearSubDir, file.Name);
+                    MigrationRecord? record = null;
+                    string? message = null;
+                    bool isError = false;
+
+                    try
                     {
-                        var baseName = Path.GetFileNameWithoutExtension(file.Name);
-                        var extension = file.Extension;
-                        var counter = 1;
-                        do
+                        if (!File.Exists(file.FullName))
                         {
-                            targetPath = Path.Combine(yearSubDir, $"{baseName}_{counter}{extension}");
-                            counter++;
-                        } while (File.Exists(targetPath));
-                    }
+                            record = new MigrationRecord(file.FullName, "", file.Length, "", "跳过", "文件不存在");
+                            message = $"跳过（文件不存在）：{file.Name}";
+                        }
+                        else
+                        {
+                            // 计算文件hash
+                            var hash = ComputeFileHash(file.FullName);
 
-                    var relativePath = Path.GetRelativePath(SourceDirectory, file.FullName);
-                    var relativeDir = Path.GetDirectoryName(relativePath);
-                    if (!string.IsNullOrEmpty(relativeDir))
+                            if (File.Exists(targetPath))
+                            {
+                                var baseName = Path.GetFileNameWithoutExtension(file.Name);
+                                var extension = file.Extension;
+                                var counter = 1;
+                                do
+                                {
+                                    targetPath = Path.Combine(yearSubDir, $"{baseName}_{counter}{extension}");
+                                    counter++;
+                                } while (File.Exists(targetPath));
+                            }
+
+                            var relativePath = Path.GetRelativePath(SourceDirectory, file.FullName);
+                            var relativeDir = Path.GetDirectoryName(relativePath);
+                            if (!string.IsNullOrEmpty(relativeDir))
+                            {
+                                var targetSubDir = Path.Combine(yearSubDir, relativeDir);
+                                if (!Directory.Exists(targetSubDir))
+                                    Directory.CreateDirectory(targetSubDir);
+                                targetPath = Path.Combine(yearSubDir, relativePath);
+                                var finalTargetDir = Path.GetDirectoryName(targetPath)!;
+                                if (!Directory.Exists(finalTargetDir))
+                                    Directory.CreateDirectory(finalTargetDir);
+                            }
+
+                            File.Move(file.FullName, targetPath);
+                            record = new MigrationRecord(file.FullName, targetPath, file.Length, hash, "已移动", null);
+                            message = $"已移动：{file.Name}";
+                        }
+                    }
+                    catch (Exception ex)
                     {
-                        var targetSubDir = Path.Combine(yearSubDir, relativeDir);
-                        if (!Directory.Exists(targetSubDir))
-                            Directory.CreateDirectory(targetSubDir);
-                        targetPath = Path.Combine(yearSubDir, relativePath);
-                        var finalTargetDir = Path.GetDirectoryName(targetPath)!;
-                        if (!Directory.Exists(finalTargetDir))
-                            Directory.CreateDirectory(finalTargetDir);
+                        isError = true;
+                        record = new MigrationRecord(file.FullName, "", file.Length, "", "错误", ex.Message);
+                        message = $"错误：{file.Name} - {ex.Message}";
                     }
 
-                    File.Move(file.FullName, targetPath);
-                    movedCount++;
-                    _migrationRecords.Add(new MigrationRecord(file.FullName, targetPath, file.Length, "已移动", null));
-                    AddLog($"已移动：{file.Name}");
+                    ((IProgress<(int, string, bool, MigrationRecord?)>)progress).Report((i, message!, isError, record));
                 }
-                catch (Exception ex)
-                {
-                    errorCount++;
-                    _migrationRecords.Add(new MigrationRecord(file.FullName, "", file.Length, "错误", ex.Message));
-                    AddLog($"错误：{file.Name} - {ex.Message}", true);
-                }
+            }, ct);
 
-                var completed = movedCount + skippedCount + errorCount;
-                if (completed % 50 == 0 || completed == total)
-                {
-                    ProgressValue = (double)completed / total * 100;
-                    StatusMessage = $"已处理 {completed}/{total}";
-                }
-            }
+            int finalMoved = _migrationRecords.Count(r => r.Status == "已移动");
+            int finalSkipped = _migrationRecords.Count(r => r.Status == "跳过");
+            int finalError = _migrationRecords.Count(r => r.Status == "错误");
 
-            StatusMessage = $"迁移完成 - 已移动：{movedCount}，跳过：{skippedCount}，错误：{errorCount}";
+            StatusMessage = $"迁移完成 - 已移动：{finalMoved}，跳过：{finalSkipped}，错误：{finalError}";
             MigrateButtonContent = "迁移完成";
             CanScan = true;
             CanMigrate = false;
             CanCancel = false;
             ProgressValue = 100;
 
-            AddLog($"迁移完成！已移动：{movedCount}，跳过：{skippedCount}，错误：{errorCount}");
+            AddLog($"迁移完成！已移动：{finalMoved}，跳过：{finalSkipped}，错误：{finalError}");
 
             // 生成迁移报告
-            var reportPath = GenerateReportCsv(movedCount, skippedCount, errorCount, total);
+            var reportPath = GenerateReportCsv(finalMoved, finalSkipped, finalError, total);
             if (!string.IsNullOrEmpty(reportPath))
             {
                 AddLog($"迁移报告已保存：{reportPath}");
@@ -390,30 +447,35 @@ public partial class YearFilterMigrationViewModel : ObservableObject
         return unitIndex == 0 ? $"{size:F0} {units[unitIndex]}" : $"{size:F2} {units[unitIndex]}";
     }
 
-    private string? GenerateReportCsv(int movedCount, int skippedCount, int errorCount, int total)
+    private static string ComputeFileHash(string filePath)
+    {
+        try
+        {
+            using var md5 = System.Security.Cryptography.MD5.Create();
+            using var stream = File.OpenRead(filePath);
+            var hash = md5.ComputeHash(stream);
+            return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    private string GenerateReportCsv(int movedCount, int skippedCount, int errorCount, int total)
     {
         try
         {
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var defaultFileName = $"迁移报告_{_parsedYear}_{timestamp}.csv";
-
-            var dialog = new Microsoft.Win32.SaveFileDialog
-            {
-                FileName = defaultFileName,
-                DefaultExt = ".csv",
-                Filter = "CSV 文件|*.csv|所有文件|*.*",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
-            };
-
-            if (dialog.ShowDialog() != true)
-                return null;
+            var fileName = $"迁移报告_{_parsedYear}_{timestamp}.csv";
+            var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), fileName);
 
             var sb = new StringBuilder();
-            sb.AppendLine("操作,源路径,目标路径,文件大小,错误信息");
+            sb.AppendLine("操作,源路径,目标路径,文件大小,文件Hash,错误信息");
 
             foreach (var record in _migrationRecords)
             {
-                sb.AppendLine($"{EscapeCsv(record.Status)},{EscapeCsv(record.SourcePath)},{EscapeCsv(record.TargetPath)},{FormatSize(record.Size)},{EscapeCsv(record.ErrorMessage ?? "")}");
+                sb.AppendLine($"{EscapeCsv(record.Status)},{EscapeCsv(record.SourcePath)},{EscapeCsv(record.TargetPath)},{FormatSize(record.Size)},{record.Hash},{EscapeCsv(record.ErrorMessage ?? "")}");
             }
 
             sb.AppendLine();
@@ -427,13 +489,13 @@ public partial class YearFilterMigrationViewModel : ObservableObject
             sb.AppendLine($"跳过：{skippedCount}");
             sb.AppendLine($"错误：{errorCount}");
 
-            File.WriteAllText(dialog.FileName, sb.ToString(), new UTF8Encoding(true));
-            return dialog.FileName;
+            File.WriteAllText(filePath, sb.ToString(), new UTF8Encoding(true));
+            return filePath;
         }
         catch (Exception ex)
         {
             AddLog($"报告生成失败：{ex.Message}", true);
-            return null;
+            return "";
         }
     }
 
