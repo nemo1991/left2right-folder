@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace file_sync.Models;
@@ -9,9 +10,9 @@ public record FileEntry(
     string FullPath,
     string FileName,
     long FileSize,
-    System.DateTime LastModified,
-    System.DateTime CreatedTime,
-    System.DateTime LastAccessTime,
+    DateTime LastModified,
+    DateTime CreatedTime,
+    DateTime LastAccessTime,
     string Hash = "",
     FileStatus Status = FileStatus.Pending
 );

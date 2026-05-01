@@ -133,7 +133,6 @@ public partial class MainViewModel : ObservableObject
 
             ToDeleteCount = _compareResult.ToDelete.Count;
             ToMoveCount = _compareResult.ToMove.Count;
-            //_conflicts = _compareResult.Conflicts;
             ConflictCount = _compareResult.Conflicts.Count;
 
             StatusMessage = $"扫描完成 - 待删除：{ToDeleteCount}, 待移动：{ToMoveCount}, 冲突：{ConflictCount}";
@@ -170,7 +169,6 @@ public partial class MainViewModel : ObservableObject
         if (_compareResult == null) return;
 
         _cts = new CancellationTokenSource();
-        var ct = _cts.Token;
         MigrationResult? result = null;
 
         try
@@ -185,12 +183,8 @@ public partial class MainViewModel : ObservableObject
 
             var progress = new Progress<MigrationProgress>(p =>
             {
-                // 进度条每 50 个文件更新一次，避免 UI 过载
-                if (p.Completed % 50 == 0 || p.Completed == 1 || p.Completed == p.Total)
-                {
-                    ProgressValue = (double)p.Completed / p.Total * 100;
-                    StatusMessage = $"{p.Operation}: {p.Completed}/{p.Total}";
-                }
+                ProgressValue = (double)p.Completed / p.Total * 100;
+                StatusMessage = $"{p.Operation}: {p.Completed}/{p.Total}";
                 // 日志每条都记录
                 AddLog($"{p.Operation}: {Path.GetFileName(p.CurrentFile)}");
             });
@@ -202,7 +196,7 @@ public partial class MainViewModel : ObservableObject
                 SourceDirectory,
                 TargetDirectory,
                 progress,
-                ct);
+                 _cts.Token);
 
             // 生成报告
             var report = new MigrationReport(
@@ -283,23 +277,7 @@ public partial class MainViewModel : ObservableObject
     {
         var timestamp = DateTime.Now.ToString("HH:mm:ss");
         var log = new LogEntry($"[{timestamp}] {(isError ? "X " : "")}{message}", isError);
-
-        // 在 UI 线程添加
-        try
-        {
-            Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-            {
-                Logs.Add(log);
-                while (Logs.Count > 1000)
-                {
-                    Logs.RemoveAt(0);
-                }
-            }));
-        }
-        catch (Exception)
-        {
-            // 忽略日志添加失败
-        }
+        Logs.Add(log);
     }
 }
 

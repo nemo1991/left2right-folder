@@ -1,5 +1,4 @@
 using System;
-using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Threading.Tasks;
 using System.Windows;
@@ -44,22 +43,19 @@ public partial class MainWindow : HandyControl.Controls.Window
 
     private void SubscribeToLogCollection()
     {
-        if (_viewModel.Logs is ObservableCollection<LogEntry> collection)
+        _viewModel.Logs.CollectionChanged += (s, e) =>
         {
-            collection.CollectionChanged += (s, e) =>
+            if (e.Action == NotifyCollectionChangedAction.Add && LogListBox.Items.Count > 0)
             {
-                if (e.Action == NotifyCollectionChangedAction.Add && LogListBox.Items.Count > 0)
+                Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    Dispatcher.BeginInvoke(new Action(() =>
+                    if (LogListBox.Items.Count > 0)
                     {
-                        if (LogListBox.Items.Count > 0)
-                        {
-                            LogListBox.ScrollIntoView(LogListBox.Items[LogListBox.Items.Count - 1]);
-                        }
-                    }));
-                }
-            };
-        }
+                        LogListBox.ScrollIntoView(LogListBox.Items[LogListBox.Items.Count - 1]);
+                    }
+                }));
+            }
+        };
     }
 
     private async void BrowseSourceButton_Click(object sender, RoutedEventArgs e)
@@ -95,6 +91,8 @@ public partial class MainWindow : HandyControl.Controls.Window
             UseDescriptionForTitle = true,
             ShowNewFolderButton = false
         };
+
+        
 
         var helper = new WindowInteropHelper(this);
         var owner = new Win32Window(helper.Handle);
@@ -134,10 +132,7 @@ public partial class MainWindow : HandyControl.Controls.Window
         BrowseTargetButton.Click -= BrowseTargetButton_Click;
         ScanButton.Click -= ScanButton_Click;
         MigrateButton.Click -= MigrateButton_Click;
+        _viewModel.Logs.CollectionChanged -= (s, ev) => { };
 
-        if (_viewModel.Logs is ObservableCollection<LogEntry> collection)
-        {
-            collection.CollectionChanged -= (s, ev) => { };
-        }
     }
 }

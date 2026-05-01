@@ -56,23 +56,27 @@ public class FileMigrator : IFileMigrator
             var details = new List<MigrationDetail>();
             int deletedCount = 0;
             int migratedCount = 0;
-            int skippedCount = conflicts.Count;
             int errorCount = 0;
+
+            int skippedCount = conflicts.Count;
+
+            int totalFiles = toDelete.Count + toMove.Count + conflicts.Count;
 
             // 先记录冲突文件
             foreach (var conflict in conflicts)
             {
+                ct.ThrowIfCancellationRequested();
+
                 details.Add(new MigrationDetail(
                     "Conflict", conflict.FullPath, "", conflict.FileSize, conflict.Hash,
                     conflict.CreatedTime, conflict.LastModified, conflict.LastAccessTime,
                     "Skipped", "文件名冲突 - 内容不同",
                     0, "", default, default, default
                 ));
+
+                progress?.Report(new MigrationProgress(conflict.FullPath, errorCount + deletedCount + migratedCount, totalFiles, "冲突"));
             }
 
-            // 每50个文件报告一次进度，减少UI线程负担
-            int progressCounter = 0;
-            int totalFiles = toDelete.Count + toMove.Count + conflicts.Count;
 
             // 先执行删除操作
             foreach (var fileEntry in toDelete)
@@ -120,8 +124,7 @@ public class FileMigrator : IFileMigrator
                     ));
                 }
 
-                if (++progressCounter % 50 == 0 || progressCounter == 1 || progressCounter == totalFiles)
-                    progress?.Report(new MigrationProgress(file.FullPath, deletedCount + migratedCount, totalFiles, "删除"));
+                progress?.Report(new MigrationProgress(file.FullPath, errorCount + deletedCount + migratedCount, totalFiles, "删除"));
             }
 
             // 执行移动操作
@@ -166,10 +169,6 @@ public class FileMigrator : IFileMigrator
                         0, "", default, default, default
                     ));
                 }
-                catch (Exception ex) when (ct.IsCancellationRequested)
-                {
-                    return new MigrationResult(deletedCount, migratedCount, skippedCount, errorCount, details);
-                }
                 catch (Exception ex)
                 {
                     errorCount++;
@@ -179,8 +178,7 @@ public class FileMigrator : IFileMigrator
                     ));
                 }
 
-                if (++progressCounter % 50 == 0 || progressCounter == 1 || progressCounter == totalFiles)
-                    progress?.Report(new MigrationProgress(file.FullPath, deletedCount + migratedCount, totalFiles, "移动"));
+                progress?.Report(new MigrationProgress(file.FullPath, errorCount+deletedCount + migratedCount, totalFiles, "移动"));
             }
 
             return new MigrationResult(deletedCount, migratedCount, skippedCount, errorCount, details);
