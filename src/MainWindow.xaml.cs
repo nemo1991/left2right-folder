@@ -19,12 +19,10 @@ public partial class MainWindow : HandyControl.Controls.Window
         var fileComparator = new FileComparator();
         var fileMigrator = new FileMigrator();
         var reportGenerator = new CsvReportGenerator();
-
+        var left2Right = new FolderLeftDryRightFill( hashCalculator);
 
         _viewModel = new MainViewModel(
-            fileScanner,
-            hashCalculator,
-            fileComparator,
+            left2Right,
             fileMigrator,
             reportGenerator
             );

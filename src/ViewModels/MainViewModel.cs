@@ -13,9 +13,6 @@ namespace file_sync.ViewModels;
 
 public partial class MainViewModel : ObservableObject
 {
-    private readonly IFileScanner _fileScanner;
-    private readonly IHashCalculator _hashCalculator;
-    private readonly IFileComparator _fileComparator;
     private readonly IFileMigrator _fileMigrator;
     private readonly IReportGenerator _reportGenerator;
 
@@ -38,20 +35,19 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private int _toDeleteCount;
     [ObservableProperty] private int _toMoveCount;
     [ObservableProperty] private int _conflictCount;
+    [ObservableProperty] private int _errorCount;
     [ObservableProperty] private ObservableCollection<LogEntry> _logs = new();
 
 
+    private readonly ILeft2Right _left2Right;
+
     public MainViewModel(
-        IFileScanner fileScanner,
-        IHashCalculator hashCalculator,
-        IFileComparator fileComparator,
+        ILeft2Right left2Right,
         IFileMigrator fileMigrator,
         IReportGenerator reportGenerator
         )
     {
-        _fileScanner = fileScanner;
-        _hashCalculator = hashCalculator;
-        _fileComparator = fileComparator;
+        _left2Right = left2Right;
         _fileMigrator = fileMigrator;
         _reportGenerator = reportGenerator;
     }
@@ -62,6 +58,7 @@ public partial class MainViewModel : ObservableObject
         ToMoveCount = 0;
         ConflictCount = 0;
         TotalScanned = 0;
+        ErrorCount= 0;
         CanScan = !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(TargetDirectory);
     }
     partial void OnTargetDirectoryChanged(string value)
@@ -70,6 +67,7 @@ public partial class MainViewModel : ObservableObject
         ToMoveCount = 0;
         ConflictCount = 0;
         TotalScanned = 0;
+        ErrorCount = 0;
         CanScan = !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(SourceDirectory);
     }
 
@@ -113,37 +111,31 @@ public partial class MainViewModel : ObservableObject
             ConflictCount = 0;
 
 
-            // 扫描源目录
-            var sourceProgress = new Progress<string>(file =>
+            
+            StatusMessage = $"扫描源目录：{Path.GetFileName(SourceDirectory)}";
+            _left2Right.Left = SourceDirectory;
+            _left2Right.Right = TargetDirectory;
+            _left2Right.OnItemScaning += (s, e) =>
             {
-                StatusMessage = $"扫描源目录：{Path.GetFileName(file)}";
-            });
-            _sourceFiles = await _fileScanner.ScanAsync(SourceDirectory, sourceProgress, ct);
-            TotalScanned = _sourceFiles.Count;
+                StatusMessage = $"当前文件：{Path.GetFileName(e.Current.Source.FullPath)}";
 
-            AddLog($"源目录扫描完成：{_sourceFiles.Count} 个文件");
+                TotalScanned = e.ProcessedTotal;
+                ToDeleteCount = e.ToDeleteTotal;
+                ToMoveCount = e.ToMoveTotal;
+                ConflictCount = e.ConfilctTotal;
+                ErrorCount = e.ErrorTotal;
+            };
 
-            // 对比文件（不扫描目标目录，仅检查同名文件）
-            StatusMessage = "正在对比文件...";
-            var compareProgress = new Progress<string>(msg =>
-            {
-                AddLog(msg);
-            });
-            _compareResult = await _fileComparator.CompareAsync(_sourceFiles, SourceDirectory, TargetDirectory, _hashCalculator, compareProgress, ct);
+            await _left2Right.ScanAsync(ct);
 
-            ToDeleteCount = _compareResult.ToDelete.Count;
-            ToMoveCount = _compareResult.ToMove.Count;
-            ConflictCount = _compareResult.Conflicts.Count;
-
-            StatusMessage = $"扫描完成 - 待删除：{ToDeleteCount}, 待移动：{ToMoveCount}, 冲突：{ConflictCount}";
+            StatusMessage = $"扫描完成";
             ScanButtonContent = "重新扫描";
+            
             CanScan = true;
             CanMigrate = ToDeleteCount > 0 || ToMoveCount > 0;
             CanCancel = false;
             IsProgressIndeterminate = false;
             ProgressValue = 100;
-
-            AddLog($"对比完成 - 待删除：{ToDeleteCount}, 待移动：{ToMoveCount}, 冲突：{ConflictCount}");
         }
         catch (OperationCanceledException)
         {

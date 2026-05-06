@@ -56,23 +56,9 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Background="{DynamicResource SecondaryRegionBrush}"
-               CornerRadius="4" Padding="12,6" Margin="5">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="已扫描:" Margin="0,0,12,0">
-                            <Run FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Text="{Binding TotalScanned, Mode=OneWay}"/>
-                        </TextBlock>
-                        <TextBlock Text="待删除:" Margin="0,0,12,0">
-                   <Run FontWeight="Bold" Foreground="#D13438" Text="{Binding ToDeleteCount, Mode=OneWay}"/>
-                        </TextBlock>
-                        <TextBlock Text="待移动:" Margin="0,0,12,0">
-                   <Run FontWeight="Bold" Foreground="#107C10" Text="{Binding ToMoveCount, Mode=OneWay}"/>
-                        </TextBlock>
-                        <TextBlock Text="冲突:">
-                   <Run FontWeight="Bold" Foreground="#FF6B00" Text="{Binding ConflictCount, Mode=OneWay}"/>
-                        </TextBlock>
-                    </StackPanel>
-                </Border>
+                <TextBlock Margin="5" Grid.Column="0" Text="{Binding StatusMessage, Mode=OneWay}"
+VerticalAlignment="Center" 
+TextTrimming="CharacterEllipsis" />
 
                 <Button Grid.Column="1" x:Name="ScanButton" Content="{Binding ScanButtonContent, Mode=OneWay}"
                Style="{StaticResource ButtonPrimary}" Width="80" Margin="5"
@@ -95,12 +81,31 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <ProgressBar Grid.Column="0" Value="{Binding ProgressValue, Mode=OneWay}"
+                <Border Grid.Column="0" Background="{DynamicResource SecondaryRegionBrush}"
+CornerRadius="4" Padding="12,6" Margin="5">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="已扫描:" Margin="0,0,12,0">
+             <Run FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Text="{Binding TotalScanned, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock Text="待删除:" Margin="0,0,12,0">
+    <Run FontWeight="Bold" Foreground="#D13438" Text="{Binding ToDeleteCount, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock Text="待移动:" Margin="0,0,12,0">
+    <Run FontWeight="Bold" Foreground="#107C10" Text="{Binding ToMoveCount, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock Text="冲突:" Margin="0,0,12,0">
+    <Run FontWeight="Bold" Foreground="#FF6B00" Text="{Binding ConflictCount, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock Text="错误:">
+<Run FontWeight="Bold" Foreground="#D13438" Text="{Binding ErrorCount, Mode=OneWay}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+                
+                <ProgressBar Grid.Column="1" Value="{Binding ProgressValue, Mode=OneWay}"
                      IsIndeterminate="{Binding IsProgressIndeterminate, Mode=OneWay}"
-                      Margin="5"/>
-                <TextBlock Grid.Column="1" Text="{Binding StatusMessage, Mode=OneWay}"
-               VerticalAlignment="Center" Width="270"
-               TextTrimming="CharacterEllipsis" Grid.ColumnSpan="2"/>
+                      Margin="5" Width="270"/>
+               
             </Grid>
         </hc:Card>
            
