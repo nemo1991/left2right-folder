@@ -26,7 +26,7 @@ public class HashCalculatorTests : IDisposable
         await File.WriteAllTextAsync(file1, "hello world");
         await File.WriteAllTextAsync(file2, "hello world");
 
-        var calc = new HashCalculator();
+        var calc = new Md5Calculator();
         var hash1 = await calc.ComputeHashAsync(file1);
         var hash2 = await calc.ComputeHashAsync(file2);
 
@@ -41,7 +41,7 @@ public class HashCalculatorTests : IDisposable
         await File.WriteAllTextAsync(file1, "content A");
         await File.WriteAllTextAsync(file2, "content B");
 
-        var calc = new HashCalculator();
+        var calc = new Md5Calculator();
         var hash1 = await calc.ComputeHashAsync(file1);
         var hash2 = await calc.ComputeHashAsync(file2);
 
@@ -54,7 +54,7 @@ public class HashCalculatorTests : IDisposable
         var file = Path.Combine(_testDir, "empty.txt");
         await File.WriteAllTextAsync(file, "");
 
-        var calc = new HashCalculator();
+        var calc = new Md5Calculator();
         var hash = await calc.ComputeHashAsync(file);
 
         Assert.False(string.IsNullOrEmpty(hash));
@@ -68,7 +68,7 @@ public class HashCalculatorTests : IDisposable
         var bytes = Enumerable.Range(0, 256).Select(b => (byte)b).ToArray();
         await File.WriteAllBytesAsync(file, bytes);
 
-        var calc = new HashCalculator();
+        var calc = new Md5Calculator();
         var hash = await calc.ComputeHashAsync(file);
 
         Assert.False(string.IsNullOrEmpty(hash));

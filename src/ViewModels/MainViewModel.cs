@@ -1,30 +1,30 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.Windows;
-using System.Threading;
-using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using file_sync.Models;
 using file_sync.Services;
+using System;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace file_sync.ViewModels;
 
 public partial class MainViewModel : ObservableObject
 {
-    private readonly IFileMigrator _fileMigrator;
     private readonly IReportGenerator _reportGenerator;
 
     private CancellationTokenSource? _cts;
-    private List<FileEntry> _sourceFiles = new();
-    private CompareResult? _compareResult;
 
     [ObservableProperty] private string _sourceDirectory = "";
     [ObservableProperty] private string _targetDirectory = "";
     [ObservableProperty] private string _statusMessage = "就绪";
     [ObservableProperty] private double _progressValue;
-    [ObservableProperty] private bool _isProgressIndeterminate;
+
+    // 进度是否不可预测，比如正在扫描文件时无法确定总数，这时显示一个转圈的进度条
+    [ObservableProperty]
+    private bool _isProgressIndeterminate;
+
     [ObservableProperty] private bool _canScan = false;
     [ObservableProperty] private bool _canMigrate;
     [ObservableProperty] private bool _canCancel;
@@ -43,12 +43,10 @@ public partial class MainViewModel : ObservableObject
 
     public MainViewModel(
         ILeft2Right left2Right,
-        IFileMigrator fileMigrator,
         IReportGenerator reportGenerator
         )
     {
         _left2Right = left2Right;
-        _fileMigrator = fileMigrator;
         _reportGenerator = reportGenerator;
     }
 
@@ -58,7 +56,7 @@ public partial class MainViewModel : ObservableObject
         ToMoveCount = 0;
         ConflictCount = 0;
         TotalScanned = 0;
-        ErrorCount= 0;
+        ErrorCount = 0;
         CanScan = !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(TargetDirectory);
     }
     partial void OnTargetDirectoryChanged(string value)
@@ -91,6 +89,22 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
+
+        TotalScanned = 0;
+        ToDeleteCount = 0;
+        ToMoveCount = 0;
+        ConflictCount = 0;
+        ErrorCount = 0;
+        StatusMessage = "正在扫描源目录...";
+        ScanButtonContent = "扫描中...";
+        MigrateButtonContent = "开始迁移";
+        IsProgressIndeterminate = true;
+        Logs.Clear();
+        AddLog("开始进行扫描");
+
+        // 情况之前的处理结果，准备新的扫描
+        _left2Right.ItemInfos.Clear();
+
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
 
@@ -99,41 +113,35 @@ public partial class MainViewModel : ObservableObject
             CanScan = false;
             CanMigrate = false;
             CanCancel = true;
-            IsProgressIndeterminate = true;
-            StatusMessage = "正在扫描源目录...";
-            ScanButtonContent = "扫描中...";
-            MigrateButtonContent = "开始迁移";
-            Logs.Clear();
-            _sourceFiles.Clear();
-            TotalScanned = 0;
-            ToDeleteCount = 0;
-            ToMoveCount = 0;
-            ConflictCount = 0;
 
-
-            
             StatusMessage = $"扫描源目录：{Path.GetFileName(SourceDirectory)}";
             _left2Right.Left = SourceDirectory;
             _left2Right.Right = TargetDirectory;
             _left2Right.OnItemScaning += (s, e) =>
             {
-                StatusMessage = $"当前文件：{Path.GetFileName(e.Current.Source.FullPath)}";
+                StatusMessage = $"当前文件：{Path.GetFileName(e.Current!.Source.FullPath)}";
 
                 TotalScanned = e.ProcessedTotal;
-                ToDeleteCount = e.ToDeleteTotal;
-                ToMoveCount = e.ToMoveTotal;
-                ConflictCount = e.ConfilctTotal;
-                ErrorCount = e.ErrorTotal;
+                ToDeleteCount = e.ScanResultCount![ScanResult.ToDelete];
+                ToMoveCount = e.ScanResultCount[ScanResult.ToMove];
+                ConflictCount = e.ScanResultCount[ScanResult.Confilct];
+                ErrorCount = e.ScanResultCount[ScanResult.Error];
+
+                if (e.IsErr)
+                {
+                    AddLog($"错误：{e.Current.Source.FullPath} - {e.Msg}", true);
+                }
             };
 
             await _left2Right.ScanAsync(ct);
 
             StatusMessage = $"扫描完成";
             ScanButtonContent = "重新扫描";
-            
+
             CanScan = true;
             CanMigrate = ToDeleteCount > 0 || ToMoveCount > 0;
             CanCancel = false;
+
             IsProgressIndeterminate = false;
             ProgressValue = 100;
         }
@@ -154,65 +162,58 @@ public partial class MainViewModel : ObservableObject
             IsProgressIndeterminate = false;
             AddLog($"错误：{ex.Message}", true);
         }
+
+        AddLog("扫描结束");
     }
 
     public async Task MigrateAsync()
     {
-        if (_compareResult == null) return;
-
         _cts = new CancellationTokenSource();
-        MigrationResult? result = null;
+
+        CanMigrate = false;
+        CanScan = false;
+        CanCancel = true;
+        IsProgressIndeterminate = false;
+        ProgressValue = 0;
+        StatusMessage = "正在迁移文件...";
+        MigrateButtonContent = "迁移中...";
+        var beign = DateTime.Now;
+
 
         try
         {
-            CanMigrate = false;
-            CanScan = false;
-            CanCancel = true;
-            IsProgressIndeterminate = false;
-            ProgressValue = 0;
-            StatusMessage = "正在迁移文件...";
-            MigrateButtonContent = "迁移中...";
+            var progress = new Progress<LogEntry>(Logs.Add);
 
-            var progress = new Progress<MigrationProgress>(p =>
+            _left2Right.OnItemMigrating += (s, e) =>
             {
-                ProgressValue = (double)p.Completed / p.Total * 100;
-                StatusMessage = $"{p.Operation}: {p.Completed}/{p.Total}";
-                // 日志每条都记录
-                AddLog($"{p.Operation}: {Path.GetFileName(p.CurrentFile)}");
-            });
+                ProgressValue = (double)e.ProcessedTotal / e.Total * 100;
+                StatusMessage = $"已迁移文件：{Path.GetFileName(e.Current!.Source.FullPath)}; {e.ProcessedTotal}/{e.Total}";
+                if (e.IsErr)
+                {
+                    ((IProgress<LogEntry>)progress).Report(new LogEntry($"文件：{Path.GetFileName(e.Current!.Source.FullPath)}，迁移遇到问题：{e.Msg!}", true));
+                }
 
-            result = await _fileMigrator.MigrateAsync(
-                _compareResult.ToDelete,
-                _compareResult.ToMove,
-                _compareResult.Conflicts,
-                SourceDirectory,
-                TargetDirectory,
-                progress,
-                 _cts.Token);
+            };
 
-            // 生成报告
+            await _left2Right.MigrateAsync(_cts.Token);
+
+            //// 生成报告
             var report = new MigrationReport(
-                DateTime.Now,
+                beign,
                 DateTime.Now,
                 SourceDirectory,
                 TargetDirectory,
-                TotalScanned,
-                result.DeletedCount,
-                result.MigratedCount,
-                result.ErrorCount,
-                result.ConfilctCount,
-                result.Details
+                _left2Right
             );
 
             var reportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                 $"文件迁移报告_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+
             await _reportGenerator.GenerateCsvAsync(report, reportPath);
 
-            StatusMessage = $"迁移完成 - 删除：{result.DeletedCount}, 移动：{result.MigratedCount}, 冲突：{result.ConfilctCount}, 错误：{result.ErrorCount}";
+            StatusMessage = $"迁移完成 - 删除：{_left2Right.ItemInfos.Count(i => i.MigrateResult == MigrateResult.Deleted)}, 移动：{_left2Right.ItemInfos.Count(i => i.MigrateResult == MigrateResult.Moved)}, 跳过：{_left2Right.ItemInfos.Count(i => i.MigrateResult == MigrateResult.Skipped)}, 失败：{_left2Right.ItemInfos.Count(i => i.MigrateResult == MigrateResult.Fail)}";
+
             MigrateButtonContent = "迁移完成";
-            CanScan = true;
-            CanMigrate = false;
-            CanCancel = false;
 
             AddLog($"迁移完成！报告已保存到：{reportPath}");
 
@@ -220,43 +221,18 @@ public partial class MainViewModel : ObservableObject
         catch (OperationCanceledException)
         {
             StatusMessage = "已取消迁移";
-            MigrateButtonContent = "开始迁移";
-            CanMigrate = true;
-            CanScan = true;
-            CanCancel = false;
             AddLog("迁移已取消");
-
-            // 生成取消前的操作报告
-            try
-            {
-                var cancelledReport = new MigrationReport(
-                    DateTime.Now,
-                    DateTime.Now,
-                    SourceDirectory,
-                    TargetDirectory,
-                    TotalScanned,
-                    result?.DeletedCount ?? 0,
-                    result?.MigratedCount ?? 0,
-                    result?.ErrorCount ?? 0,
-                     result?.ConfilctCount ?? 0,
-                    result?.Details ?? new List<MigrationDetail>()
-                );
-                var reportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                    $"文件迁移报告_已取消_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
-                await _reportGenerator.GenerateCsvAsync(cancelledReport, reportPath);
-                AddLog($"取消报告已保存到：{reportPath}");
-            }
-            catch { }
         }
         catch (Exception ex)
         {
             StatusMessage = $"迁移失败：{ex.Message}";
-            MigrateButtonContent = "开始迁移";
-            CanMigrate = true;
-            CanScan = true;
-            CanCancel = false;
             AddLog($"错误：{ex.Message}", true);
         }
+
+        CanScan = true;
+        MigrateButtonContent = "开始迁移";
+        CanMigrate = false;
+        CanCancel = false;
     }
 
     public void Cancel()
@@ -267,10 +243,28 @@ public partial class MainViewModel : ObservableObject
 
     private void AddLog(string message, bool isError = false)
     {
-        var timestamp = DateTime.Now.ToString("HH:mm:ss");
-        var log = new LogEntry($"[{timestamp}] {(isError ? "X " : "")}{message}", isError);
-        Logs.Add(log);
+        Logs.Add(new LogEntry(message, isError));
     }
 }
 
-public record LogEntry(string Message, bool IsError);
+public record LogEntry
+{
+    public string Message { get; init; }
+    public bool IsError { get; init; }
+
+    public LogEntry(string message, bool isError, string timestamp)
+    {
+        Message = $"[{timestamp}] {(isError ? "X " : "")}{message}";
+        IsError = isError;
+    }
+
+    public LogEntry(string message, bool isError) : this(message, isError, DateTime.Now.ToString("HH:mm:ss"))
+    {
+
+    }
+
+    public LogEntry(string message) : this(message, false, DateTime.Now.ToString("HH:mm:ss"))
+    {
+
+    }
+}

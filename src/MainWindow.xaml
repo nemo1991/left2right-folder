@@ -56,7 +56,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Margin="5" Grid.Column="0" Text="{Binding StatusMessage, Mode=OneWay}"
+                <TextBlock Margin="10,0,10,0" Grid.Column="0" Text="{Binding StatusMessage, Mode=OneWay}"
 VerticalAlignment="Center" 
 TextTrimming="CharacterEllipsis" />
 
@@ -82,7 +82,7 @@ TextTrimming="CharacterEllipsis" />
                 </Grid.ColumnDefinitions>
 
                 <Border Grid.Column="0" Background="{DynamicResource SecondaryRegionBrush}"
-CornerRadius="4" Padding="12,6" Margin="5">
+CornerRadius="4" Padding="12,6" Margin="5" >
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="已扫描:" Margin="0,0,12,0">
              <Run FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Text="{Binding TotalScanned, Mode=OneWay}"/>
@@ -104,7 +104,7 @@ CornerRadius="4" Padding="12,6" Margin="5">
                 
                 <ProgressBar Grid.Column="1" Value="{Binding ProgressValue, Mode=OneWay}"
                      IsIndeterminate="{Binding IsProgressIndeterminate, Mode=OneWay}"
-                      Margin="5" Width="270"/>
+                     Height="28" Margin="5,0,5,0" Width="270"/>
                
             </Grid>
         </hc:Card>

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Specialized;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
@@ -14,16 +13,12 @@ public partial class MainWindow : HandyControl.Controls.Window
 
     public MainWindow()
     {
-        var fileScanner = new FileScanner();
-        var hashCalculator = new HashCalculator();
-        var fileComparator = new FileComparator();
-        var fileMigrator = new FileMigrator();
+        var hashCalculator = new Md5Calculator();
         var reportGenerator = new CsvReportGenerator();
         var left2Right = new FolderLeftDryRightFill( hashCalculator);
 
         _viewModel = new MainViewModel(
             left2Right,
-            fileMigrator,
             reportGenerator
             );
 
@@ -36,25 +31,25 @@ public partial class MainWindow : HandyControl.Controls.Window
         MigrateButton.Click += MigrateButton_Click;
         CancelButton.Click += CancelButton_Click;
 
-        SubscribeToLogCollection();
+        //SubscribeToLogCollection();
     }
 
-    private void SubscribeToLogCollection()
-    {
-        _viewModel.Logs.CollectionChanged += (s, e) =>
-        {
-            if (e.Action == NotifyCollectionChangedAction.Add && LogListBox.Items.Count > 0)
-            {
-                Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    if (LogListBox.Items.Count > 0)
-                    {
-                        LogListBox.ScrollIntoView(LogListBox.Items[LogListBox.Items.Count - 1]);
-                    }
-                }));
-            }
-        };
-    }
+    //private void SubscribeToLogCollection()
+    //{
+    //    _viewModel.Logs.CollectionChanged += (s, e) =>
+    //    {
+    //        if (e.Action == NotifyCollectionChangedAction.Add && LogListBox.Items.Count > 0)
+    //        {
+    //            Dispatcher.BeginInvoke(new Action(() =>
+    //            {
+    //                if (LogListBox.Items.Count > 0)
+    //                {
+    //                    LogListBox.ScrollIntoView(LogListBox.Items[LogListBox.Items.Count - 1]);
+    //                }
+    //            }));
+    //        }
+    //    };
+    //}
 
     private async void BrowseSourceButton_Click(object sender, RoutedEventArgs e)
     {

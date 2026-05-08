@@ -6,17 +6,9 @@ using System.Threading.Tasks;
 namespace file_sync.Services;
 
 /// <summary>
-/// Hash 计算服务接口
-/// </summary>
-public interface IHashCalculator
-{
-    Task<string> ComputeHashAsync(string filePath, IProgress<double>? progress = null, CancellationToken ct = default);
-}
-
-/// <summary>
 /// Hash 计算服务 - 流式计算 MD5
 /// </summary>
-public class HashCalculator : IHashCalculator
+public class Md5Calculator : IHashCalculator
 {
     private const int BufferSize = 1024 * 1024; // 1MB 缓冲区
 
